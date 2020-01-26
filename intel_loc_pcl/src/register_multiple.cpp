@@ -37,8 +37,7 @@ void reg_multiple_callback(const sensor_msgs::PointCloud2ConstPtr &input,
     // Set the euclidean distance difference epsilon (criterion 3)
     icp.setEuclideanFitnessEpsilon (1);
     icp.align(final);
-
-    concat += final;
+    concat += final;                                                                                                                    
     sensor_msgs::PointCloud2 output_pcl;
     pcl::toROSMsg(concat, output_pcl);
     output_pcl.header.frame_id = "world";
@@ -48,7 +47,8 @@ void reg_multiple_callback(const sensor_msgs::PointCloud2ConstPtr &input,
 int main(int argc, char **argv) {
     
     
-    ros::init (argc, argv, "register_multiple");
+    ros::init(argc, argv, "register_multiple");
+    // ros::Rate rate(10);
     ros::NodeHandle node_handler;
     sensor_msgs::PointCloud2 output_pcl;
     // ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>("velodyne_points", 1, boost::bind(&pcl_callback, _1, output_pcl));
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     pcl::PCLPointCloud2 pcl_input;
     pcl_conversions::toPCL(*first_msg, pcl_input);
     pcl::fromPCLPointCloud2(pcl_input, concat);
-    ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>("transformed_cloud", 1, 
+    ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>("transformed_cloud", 10    , 
                                             boost::bind(&reg_multiple_callback, _1, concat));
 
     pub = node_handler.advertise<sensor_msgs::PointCloud2>("register_multiple", 1);

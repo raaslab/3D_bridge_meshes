@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     // was the M600 UAV for bridge inspection
 
     tf::Quaternion sensor_ros;
-    sensor_ros.setRPY(0, 0, M_PI_2);
+    sensor_ros.setRPY(M_PI_2, M_PI_2, M_PI_2);
     // sensor_ros.setRPY(0, 0, 0);    
     sensor_ros.normalize();
 

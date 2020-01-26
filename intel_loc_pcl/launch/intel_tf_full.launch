@@ -1,8 +1,11 @@
 <launch>
-  <node pkg="pcl_filter" name="velodyne_tf_pub" type="velodyne_tf_pub"
-        output="screen" />
   <node pkg="pcl_filter" name="intel_tf_pub" type="intel_tf_pub"
+        output="screen" /> 
+ <node pkg="pcl_filter" name="velodyne_tf_pub" type="velodyne_tf_pub"
         output="screen" />
+
   <node pkg="pcl_filter" name="pub_robust_pcl" type="pub_robust_pcl"
+        output="screen" />
+  <node pkg="pcl_filter" name="register_multiple" type="register_multiple"
         output="screen" />
 </launch>

@@ -31,9 +31,9 @@ void cloud_pub_callback(const sensor_msgs::PointCloud2ConstPtr &input_cloud) {
     tf::Vector3 origin;
     tf::Quaternion rot;
     tf::TransformListener tf_listener;
-    tf_listener.waitForTransform( "velodyne", "world",  ros::Time(), ros::Duration(1.0));
+    tf_listener.waitForTransform( "world", "velodyne",  ros::Time(), ros::Duration(1.0));
     try {
-        tf_listener.lookupTransform("cam_pose", "world", 
+        tf_listener.lookupTransform("world", "velodyne", 
                                         ros::Time(0), transformer);
     }
     catch (tf::TransformException exception) {
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "pub_robust_pcl");
     ros::NodeHandle handler;
 
-    ros::Subscriber sub = handler.subscribe("velodyne_points", 1, cloud_pub_callback);
+    ros::Subscriber sub = handler.subscribe<sensor_msgs::PointCloud2>("velodyne_points", 1, cloud_pub_callback);
     
     pub = handler.advertise<sensor_msgs::PointCloud2>("transformed_cloud", 1);
     ros::spin();
