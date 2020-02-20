@@ -1,6 +1,3 @@
-[submodule "coverage"]
-	path = coverage
-	url = git@github.com:raaslab/coverage.git
-[submodule "coverageVTOL"]
-	path = coverageVTOL
-	url = git@github.com:raaslab/coverageVTOL.git
+[submodule "budgetPlanning"]
+	path = budgetPlanning
+	url = git@github.com:raaslab/budgetPlanning.git
