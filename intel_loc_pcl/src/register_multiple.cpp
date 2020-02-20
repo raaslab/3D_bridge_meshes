@@ -13,7 +13,7 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/registration/icp.h>
 #include <pcl/common/projection_matrix.h>
-
+#include <pcl/search/impl/search.hpp>
 #include <ctime>
 
 ros::Publisher pub;
@@ -24,20 +24,20 @@ void reg_multiple_callback(const sensor_msgs::PointCloud2ConstPtr &input,
     pcl::PCLPointCloud2 pcl_input;
     pcl_conversions::toPCL(*input, pcl_input);
     pcl::fromPCLPointCloud2(pcl_input, *temp);
-    pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
-    icp.setInputSource(temp);
-    pcl::PointCloud<pcl::PointXYZI>::Ptr temp_concat = concat.makeShared() ;
-    icp.setInputTarget(temp_concat);
-    pcl::PointCloud<pcl::PointXYZI> final;
-    icp.setMaxCorrespondenceDistance (0.05);
-    // Set the maximum number of iterations (criterion 1)
-    icp.setMaximumIterations (50);
-    // Set the transformation epsilon (criterion 2)
-    icp.setTransformationEpsilon (1e-8);
-    // Set the euclidean distance difference epsilon (criterion 3)
-    icp.setEuclideanFitnessEpsilon (1);
-    icp.align(final);
-    concat += final;                                                                                                                    
+    // pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
+    // icp.setInputSource(temp);
+    // pcl::PointCloud<pcl::PointXYZI>::Ptr temp_concat = concat.makeShared() ;
+    // icp.setInputTarget(temp_concat);
+    // pcl::PointCloud<pcl::PointXYZI> final;
+    // icp.setMaxCorrespondenceDistance (0.05);
+    // // Set the maximum number of iterations (criterion 1)
+    // icp.setMaximumIterations (100);
+    // // Set the transformation epsilon (criterion 2)
+    // icp.setTransformationEpsilon (1e-8);
+    // // Set the euclidean distance difference epsilon (criterion 3)
+    // icp.setEuclideanFitnessEpsilon (0.1);
+    // icp.align(final);
+    concat += *temp;                                                                                                                    
     sensor_msgs::PointCloud2 output_pcl;
     pcl::toROSMsg(concat, output_pcl);
     output_pcl.header.frame_id = "world";
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     pcl::PCLPointCloud2 pcl_input;
     pcl_conversions::toPCL(*first_msg, pcl_input);
     pcl::fromPCLPointCloud2(pcl_input, concat);
-    ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>("transformed_cloud", 10    , 
+    ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>("transformed_cloud", 1    , 
                                             boost::bind(&reg_multiple_callback, _1, concat));
 
     pub = node_handler.advertise<sensor_msgs::PointCloud2>("register_multiple", 1);

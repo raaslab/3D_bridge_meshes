@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /PointCloud21
         - /Odometry1
+        - /Axes1
       Splitter Ratio: 0.5
     Tree Height: 776
   - Class: rviz/Selection
@@ -75,9 +76,9 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.300000012
+      Size (m): 0.100000001
       Style: Flat Squares
-      Topic: /filtered
+      Topic: /octomap_point_cloud_centers
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -116,6 +117,13 @@ Visualization Manager:
       Topic: /integrated_to_init
       Unreliable: false
       Value: true
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 1
+      Name: Axes
+      Radius: 0.100000001
+      Reference Frame: camera_init
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -141,25 +149,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 32.7988701
+      Distance: 68.5271912
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -3.08505297
-        Y: 1.62858832
-        Z: 8.3088398
+        X: -5.07082224
+        Y: 0.838888466
+        Z: 8.49969482
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.14479673
+      Pitch: 0.685203075
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.59904575
+      Yaw: 2.60450983
     Saved: ~
 Window Geometry:
   Displays:

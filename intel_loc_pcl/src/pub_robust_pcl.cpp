@@ -31,14 +31,14 @@ void cloud_pub_callback(const sensor_msgs::PointCloud2ConstPtr &input_cloud) {
     tf::Vector3 origin;
     tf::Quaternion rot;
     tf::TransformListener tf_listener;
-    tf_listener.waitForTransform( "world", "velodyne",  ros::Time(), ros::Duration(1.0));
-    try {
-        tf_listener.lookupTransform("world", "velodyne", 
-                                        ros::Time(0), transformer);
+    tf_listener.waitForTransform( "/world", "/velodyne",  ros::Time(), ros::Duration(1.0));
+    try{
+      tf_listener.lookupTransform("/world", "/velodyne",  
+                                  ros::Time(0), transformer);
     }
-    catch (tf::TransformException exception) {
-        ROS_ERROR("%s", exception.what());
-        return;
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+      return;
     }
 
     origin = transformer.getOrigin();

@@ -43,6 +43,7 @@ void cloud_pub_callback(const sensor_msgs::PointCloud2ConstPtr &input_cloud) {
 
     origin = transformer.getOrigin();
     rot = transformer.getRotation();
+    rot.normalize();
     tf::transformTFToEigen(transformer, trans_eigen);
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr transform_cloud(new pcl::PointCloud<pcl::PointXYZI>);
