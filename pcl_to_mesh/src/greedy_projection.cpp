@@ -23,6 +23,7 @@
 #include <memory>
 #include <map>
 #include <deque>
+#include <pcl/filters/passthrough.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -37,6 +38,8 @@
 #include <pcl/geometry/quad_mesh.h>
 #include <pcl/geometry/mesh_conversion.h>
 #include <pcl/surface/grid_projection.h>
+#include <pcl/filters/extract_indices.h>
+
 
 struct VertexXYZ {
   float x;
@@ -90,6 +93,105 @@ struct Quad {
             && (c3 == other.c3) && (c4 == other.c4));
   }
 };
+bool comparePoints( pcl::PointXYZI &a,  pcl::PointXYZI &b) {
+    return ((a.x == b.x) && (a.y == b.y) && (a.z == b.z));
+}
+
+double getDist(const pcl::PointXYZI &a, const pcl::PointXYZI &b) {
+    return (pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2));
+}
+
+
+void getPolygons(pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud, pcl::PolygonMesh &polygons, 
+                pcl::PointCloud<pcl::PointXYZI>::Ptr &out_cloud) {
+  pcl::NormalEstimation<pcl::PointXYZI, pcl::Normal> n;
+  pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+  pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
+  tree->setInputCloud (input_cloud);
+  n.setInputCloud (input_cloud);
+  n.setSearchMethod (tree);
+  n.setKSearch (20);
+  n.compute (*normals);
+  //* normals should not contain the point normals + surface curvatures
+
+  // Concatenate the XYZ and normal fields*
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointXYZINormal>);
+  pcl::concatenateFields (*input_cloud, *normals, *cloud_with_normals);
+  //* cloud_with_normals = cloud + normals
+
+  // Create search tree*
+  pcl::search::KdTree<pcl::PointXYZINormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointXYZINormal>);
+  tree2->setInputCloud (cloud_with_normals);
+
+  pcl::GridProjection<pcl::PointXYZINormal> gp3;
+  // pcl::PolygonMesh triangles;
+
+  gp3.setInputCloud(cloud_with_normals);
+  gp3.setSearchMethod(tree2);
+  gp3.setResolution(0.06);
+  gp3.setPaddingSize(1);
+  gp3.reconstruct(polygons);
+
+  // pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud (new pcl::PointCloud<pcl::PointXYZI>);
+  pcl::fromPCLPointCloud2(polygons.cloud, *out_cloud);
+  // std::cout << triangles.polygons[0].vertices.size() << " vertices\n";
+  // pcl::PointCloud<pcl::PointXYZI>::Ptr mesh_cloud (new pcl::PointCloud<pcl::PointXYZI>);
+  // pcl::fromPCLPointCloud2(polygons.cloud, *mesh_cloud);
+}
+
+
+void visualizeMesh(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, Quad test, int ind,
+                   boost::shared_ptr<pcl::visualization::PCLVisualizer> &viewer) {
+  // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("Point Cloud"));
+  viewer->addCoordinateSystem (1.0);
+  viewer->addPointCloud<pcl::PointXYZI>(cloud, std::to_string(ind));
+  viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(ind));
+  viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(ind));
+  viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(ind));
+  viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(ind));
+  viewer->initCameraParameters ();
+  viewer->setCameraPosition(-1.25, 1.19, -0.29,1,1,1);
+  while (!viewer->wasStopped ()){
+      viewer->spinOnce (1000);
+  }
+}
+
+
+
+// Function to apply ANMS to each of the square points so that you have one point in a specified spatial area
+void applyANMS(pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud, double dist_tol) {
+    // pcl::PointCloud<pcl::PointXYZI>::Ptr ret_cloud(input_cloud);
+    pcl::ExtractIndices<pcl::PointXYZI> extract;
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+
+    // Take every point, and iterate through each other point to check if it's inside tolerance value
+    double min = INT_MAX;
+    std::unordered_map<int, int> smap;
+    for (int i = 0; i < input_cloud->points.size(); i++) {
+        for (int j = 0; j < input_cloud->points.size(); j++) {
+            if (!comparePoints(input_cloud->points[i], input_cloud->points[j])) {
+                min = std::min (getDist(input_cloud->points[i], input_cloud->points[j]), min);
+                if (getDist(input_cloud->points[i], input_cloud->points[j]) < dist_tol) {
+                    // auto point = std::find(ret_cloud->points.begin(), ret_cloud->points.end(), *it1);
+                    // ret_cloud->points.erase(point);
+                    // cout << "inliers\n";
+                    if (smap.find(j) == smap.end()) {
+                        inliers->indices.push_back(j);
+                    }
+                    smap[i] = 1; 
+                }
+            }
+        }
+    }
+    extract.setInputCloud(input_cloud);
+    extract.setIndices(inliers);
+    extract.setNegative(true);
+    extract.filter(*input_cloud);
+    // cout << min << "\n";
+    // return ret_cloud;
+}
+
+
 
 Quad getCollation(Quad source, const Quad target) {
     bool ret_val = false;
@@ -196,9 +298,9 @@ int main (int argc, char** argv)
   // Load input file into a PointCloud<T> with an appropriate type
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
   pcl::PCLPointCloud2 cloud_blob;
-  pcl::io::loadPCDFile ("/home/kartikmadhira/github/pcl_to_mesh/build/bridge_plane_0.pcd", cloud_blob);
-    std::ofstream outfile1("quads_collated_0.txt");
-    std::ofstream outfile("tri_collated_0.txt");
+  pcl::io::loadPCDFile ("/home/kartikmadhira/github/pcl_to_mesh/build/bridge_plane_2.pcd", cloud_blob);
+    // std::ofstream outfile1("quads_collated_0.txt");
+    // std::ofstream outfile("tri_collated_0.txt");
 
   // pcl::io::loadPCDFile ("/home/kartikmadhira/catkin_ws/src/pcl_filter/pcd_outputs/pcd_output.pcd", cloud_blob);
 
@@ -233,7 +335,7 @@ int main (int argc, char** argv)
 
   gp3.setInputCloud(cloud_with_normals);
   gp3.setSearchMethod(tree2);
-  gp3.setResolution(0.08);
+  gp3.setResolution(0.05);
   gp3.setPaddingSize(2);
   gp3.reconstruct(triangles);
   
@@ -241,15 +343,28 @@ int main (int argc, char** argv)
   pcl::PointCloud<pcl::PointXYZI>::Ptr mesh_cloud (new pcl::PointCloud<pcl::PointXYZI>);
   pcl::fromPCLPointCloud2(triangles.cloud, *mesh_cloud);
   
-  std::vector<pcl::Vertices> first_list(triangles.polygons.begin(), triangles.polygons.end());
-  std::vector<pcl::Vertices> sec_list(first_list.begin(), first_list.end());
+  // std::vector<pcl::Vertices> first_list(triangles.polygons.begin(), triangles.polygons.end());
+  // std::vector<pcl::Vertices> sec_list(first_list.begin(), first_list.end());
 
+  //  // Create the filtering object
+  // pcl::PassThrough<pcl::PointXYZI> pass;
+  // pass.setInputCloud (cloud);
+  // pass.setFilterFieldName ("z");
+  // pass.setFilterLimits (0.0, 1.0);
+  // //pass.setFilterLimitsNegative (true);
+  // pass.filter (*mesh_cloud);
 
   std::deque<Quad> q1;
 
   // Store all the polygons int the Quad format in the respective ques;
   // triangles.polygons[0].vertices[0].o
   int count = 0;
+
+  // applyANMS(mesh_cloud, 0.0004);
+  // pcl::PolygonMesh new_quads;
+  // pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud (new pcl::PointCloud<pcl::PointXYZI>);
+  // getPolygons(mesh_cloud, new_quads, out_cloud);
+  // triangles.polygons[1] =  pcl::concatenateFields(triangles.polygons[1], triangles.polygons[2]);
   for (auto &each_quad : triangles.polygons) {
     if (each_quad.vertices.size() == 4) {
         VertexXYZ c1(mesh_cloud->points[each_quad.vertices[0]].x,
@@ -277,9 +392,9 @@ int main (int argc, char** argv)
 // cout << "q1 size is" << q1.size() << "\n";
 
       Quad first = q1.front();
-  cout << triangles.polygons.size() << "the polygons\n";
+  // cout << triangles.polygons.size() << "the polygons\n";
   while (!q1.empty()) {
-    cout << q1.size() << " "  << q2.size() << "\n";
+    // cout << q1.size() << " "  << q2.size() << "\n";
       first = q1.front();
       q1.pop_front();
       std::deque<Quad> temp;
@@ -322,19 +437,23 @@ int main (int argc, char** argv)
                 // q2.pop_front();
                 if (first_dup != temp) {
 
-                    // std::deque<Quad> rem_sec_from_first;
-                    //             cout << q1.front().c1.x << "\n";
+                    std::deque<Quad> rem_sec_from_first;
+                                // cout << q1.front().c1.x << "\n";
+                    // if (second.x != )
+                    // cout << second.c1.x << " " << second.c1.y << "\n";
+                      while (q1.front() != second && !(q1.empty())) {
+                    // cout << second.c1.x << " " << second.c1.y << "\n";
 
-                    // while (q1.front() != second) {
-                    //     rem_sec_from_first.push_front(q1.front());
-                    //     q1.pop_front();
-                    // }
-
-                    // q1.pop_front();
-                    // while(!rem_sec_from_first.empty()) {
-                    //     q1.push_front(rem_sec_from_first.front());
-                    //     rem_sec_from_first.pop_front();
-                    // }
+                          rem_sec_from_first.push_front(q1.front());
+                          q1.pop_front();
+                      }
+                      if (!q1.empty()) {
+                        q1.pop_front();
+                      }
+                      while(!rem_sec_from_first.empty()) {
+                          q1.push_front(rem_sec_from_first.front());
+                          rem_sec_from_first.pop_front();
+                      }
                     collate_check = true;
                     first = first_dup;
                     // while ()
@@ -372,24 +491,26 @@ int main (int argc, char** argv)
       } else {
           q1.push_front(first);
       }
+      // visualizeMesh(triangles)
+
   }
 
-VertexXYZ c1(1, 0, 0);
-VertexXYZ c2(2, 0, 0);
-VertexXYZ c3(3, 0, 0);
-VertexXYZ c4(4, 0, 0);
+// VertexXYZ c1(1, 0, 0);
+// VertexXYZ c2(2, 0, 0);
+// VertexXYZ c3(3, 0, 0);
+// VertexXYZ c4(4, 0, 0);
 
-// Quad make_quad1(c1, c2, c3, c4);
+// // Quad make_quad1(c1, c2, c3, c4);
 
-VertexXYZ c11(23, 0, 0);
-VertexXYZ c22(6, 0, 0);
-VertexXYZ c33(7, 0, 0);
-VertexXYZ c44(43, 0, 0);
+// VertexXYZ c11(23, 0, 0);
+// VertexXYZ c22(6, 0, 0);
+// VertexXYZ c33(7, 0, 0);
+// VertexXYZ c44(43, 0, 0);
 
-// Quad make_quad2(c11, c22, c33, c44);
+// // Quad make_quad2(c11, c22, c33, c44);
 
 
-cout << "q2 size is" << q2.size() << "\n";
+// cout << "q2 size is" << q2.size() << "\n";
 
 // if (make_quad1 != make_quad2) {
     // cout << " Quad Inequality runs properly\n";
@@ -503,66 +624,42 @@ cout << "q2 size is" << q2.size() << "\n";
   // pcl::geometry::toHalfEdgeMesh(triangles, quads);
 
 
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  viewer->setBackgroundColor (0, 0, 0);
+  // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+  // viewer->setBackgroundColor (0, 0, 0);
   // viewer->addPolygonMesh (triangles,"meshes",0);
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr test_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr test_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-  // test_cloud->points.push_back(pcl::PointXYZ(q2.front().c1.x, q2.front().c1.y, q2.front().c1.z));
-  // test_cloud->points.push_back(pcl::PointXYZ(q2.front().c2.x, q2.front().c2.y, q2.front().c2.z));
-  // test_cloud->points.push_back(pcl::PointXYZ(q2.front().c3.x, q2.front().c3.y, q2.front().c3.z));
-  // test_cloud->points.push_back(pcl::PointXYZ(q2.front().c4.x, q2.front().c4.y, q2.front().c4.z));
+  // viewer->addPointCloud<pcl::PointXYZI>(mesh_cloud);
+// viewer->addPolygonMesh(new_quads, "meshses", 0);
 
-  viewer->addPointCloud<pcl::PointXYZI>(mesh_cloud);
-
-  // cout << q2.front().c1.x << " " << q2.front().c1.y << " " << q2.front().c1.z << "\n";
-  // cout << q2.front().c2.x << " " << q2.front().c2.y << " " << q2.front().c2.z << "\n";
-  // cout << q2.front().c3.x << " " << q2.front().c3.y << " " << q2.front().c3.z << "\n";
-  // cout << q2.front().c4.x << " " << q2.front().c4.y << " " << q2.front().c4.z << "\n";
-
+  // viewer->addPointCloud<pcl::PointXYZI>(mesh_cloud);
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("Point Cloud"));
   int c = 0;
-  // while (!q2.empty()) {
-
-    //  q2.pop_front();
-
-    //   q2.pop_front();
-    //    q2.pop_front();
-    //     q2.pop_front();
-    //      q2.pop_front();
-    //       q2.pop_front();
-    // q2.pop_front(); 
-    // q2.pop_front();
-    // q2.pop_front();       
-    // q2.pop_front();
-    // q2.pop_front();
-    // q2.pop_front();
-    // q2.pop_front();
-    // q2.pop_front();
     int cl = 0;
 
     while (!q2.empty()) {
         Quad test = q2.front();
-        outfile1 << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
-        outfile1 << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
-        outfile1 << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
-        outfile1 << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
-        outfile1 << "\n";
+        // outfile1 << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
+        // outfile1 << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
+        // outfile1 << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
+        // outfile1 << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
+        // outfile1 << "\n";
 
-        outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
-        outfile << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
-        outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
+        // outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
+        // outfile << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
+        // outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
+        // // outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
+        // outfile << "\n";
+        // outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
         // outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
-        outfile << "\n";
-        outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
-        outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
-        outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
-        outfile << "\n";
-
-      // viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
+        // outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
+        // outfile << "\n";
+viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
+  viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
+  viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
+  viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
+      // visualizeMesh(mesh_cloud, test, cl, viewer);
       q2.pop_front();
       cl++;
 
@@ -571,44 +668,6 @@ cout << "q2 size is" << q2.size() << "\n";
     }
 
 
-
-//       viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-//       viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-//       viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-//       viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
-//     q2.pop_front();
-// cl++;
-
-    // cout << q2.back().id << "\n";
-    // while (!q2.empty()) {
-      // test = q2.front();
-      // viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
-      // cl++;
-      // q2.pop_front();
-      //  test = q2.front();
-      // viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
-      // cl++;
-
-      // q2.pop_front();
-      //  test = q2.front();
-      // viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
-      // cl++;
-      // q2.pop_front();
-      //  test = q2.front();
-      // viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-      // viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
-      // cl++;
 
 
 
@@ -629,16 +688,16 @@ cout << "q2 size is" << q2.size() << "\n";
 
   // viewer->addSphere(pcl::Vertices::vertices(q2.front().c1.x, q2.front().c1.y, q2.front().c1.z);
 
-
+ viewer->addCoordinateSystem (1.0);
+  viewer->initCameraParameters ();
+  while (!viewer->wasStopped ()){
+      viewer->spinOnce ();
+      std::this_thread::sleep_for(std::chrono::microseconds(100000));
+  }
 //  viewer->addLine(cloud->points[triangles.polygons[3].vertices[1]], cloud->points[triangles.polygons[3].vertices[2]], 0,255,0, "poly1");
 //   viewer->addLine(cloud->points[triangles.polygons[3].vertices[2]], cloud->points[triangles.polygons[3].vertices[3]], 0,255,0, "poly2");
 //   viewer->addLine(cloud->points[triangles.polygons[3].vertices[3]], cloud->points[triangles.polygons[3].vertices[0]],  0,255,0,"poly3");
 //   viewer->addLine(cloud->points[triangles.polygons[3].vertices[0]], cloud->points[triangles.polygons[3].vertices[1]],  0,255,0,"poly4");
 
-  // viewer->addCoordinateSystem (1.0);
-  // viewer->initCameraParameters ();
-  // while (!viewer->wasStopped ()){
-  //     viewer->spinOnce ();
-  //     std::this_thread::sleep_for(std::chrono::microseconds(100000));
-  // }
+  
 }
