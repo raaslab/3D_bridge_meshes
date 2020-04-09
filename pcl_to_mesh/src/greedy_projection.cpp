@@ -15,7 +15,19 @@
 #include <pcl/surface/organized_fast_mesh.h>
 // #include <fstream>
 // #include <string>
+// #include <pcl/features/normal_3d.h>
+#include <pcl/surface/poisson.h>
+#include <pcl/registration/icp.h>
+
 #include <pcl/surface/impl/organized_fast_mesh.hpp>
+#include <pcl/common/transforms.h>
+#include <pcl/surface/marching_cubes.h>
+#include <pcl/surface/marching_cubes_hoppe.h>
+#include <pcl/surface/marching_cubes_rbf.h>
+#include <pcl/surface/convex_hull.h>
+#include <pcl/surface/concave_hull.h>
+
+#include <pcl/surface/qhull.h>
 
 // // #include "boost/date_time/posix_time/posix_time.hpp"
 #include <thread>
@@ -97,9 +109,45 @@ bool comparePoints( pcl::PointXYZI &a,  pcl::PointXYZI &b) {
     return ((a.x == b.x) && (a.y == b.y) && (a.z == b.z));
 }
 
-double getDist(const pcl::PointXYZI &a, const pcl::PointXYZI &b) {
+double getDist(const VertexXYZ &a, const VertexXYZ &b) {
     return (pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2));
 }
+
+double getDistPoints(const pcl::PointXYZ &a, const pcl::PointXYZ &b) {
+  // cout << (pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2))  << "\n";
+    return sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2));
+}
+
+
+void removeUnwantedMeshes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PolygonMesh mesh_in,
+                          pcl::PolygonMesh &mesh_out) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr mesh_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2(mesh_in.cloud, *mesh_cloud);
+    mesh_out.header.frame_id = mesh_in.header.frame_id;
+    mesh_out.header.seq= mesh_in.header.seq;
+    mesh_out.header.stamp = mesh_in.header.stamp;
+    mesh_out.cloud = mesh_in.cloud;
+    for (int i = 0; i < mesh_in.polygons.size();i++) {
+        for (int j = 0; j < cloud_in->points.size(); j++) {
+            bool check = false;
+            for (auto &each_point : mesh_in.polygons[i].vertices) {
+                // mesh_cloud->points[each_point]
+                // cout << mesh_cloud->points[each_point].x << " " << cloud_in->points[i].x << "\n";
+                if (getDistPoints(mesh_cloud->points[each_point], cloud_in->points[j]) < 0.30) {
+                    // cout << "true\n";
+                    check = true;
+                }
+
+            }
+            if (check) {
+                mesh_out.polygons.push_back(mesh_in.polygons[i]);
+            }
+        }
+    }
+}
+
+
+
 
 
 void getPolygons(pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud, pcl::PolygonMesh &polygons, 
@@ -139,58 +187,74 @@ void getPolygons(pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud, pcl::Polygon
   // pcl::fromPCLPointCloud2(polygons.cloud, *mesh_cloud);
 }
 
+void transformPolygonMesh(pcl::PolygonMesh* inMesh, Eigen::Matrix4f& transform)
+{
+    //NOTE: For testing purposes, the matrix is defined internally
+    transform = Eigen::Matrix4f::Identity();
+    float theta = 0; // The angle of rotation in radians
+    transform (0,0) = cos (theta);
+    transform (0,1) = -sin(theta);
+    transform (1,0) = sin (theta);
+    transform (1,1) = cos (theta);
+    transform (0,3) = 2.5;
 
-void visualizeMesh(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, Quad test, int ind,
-                   boost::shared_ptr<pcl::visualization::PCLVisualizer> &viewer) {
-  // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("Point Cloud"));
+    //Important part starts here
+    pcl::PointCloud<pcl::PointXYZ> cloud;
+    pcl::fromPCLPointCloud2(inMesh->cloud, cloud);
+    pcl::transformPointCloud(cloud, cloud, transform);
+    pcl::toPCLPointCloud2(cloud, inMesh->cloud);
+}
+void visualizeMesh(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Quad test, int ind) {
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("Point Cloud"));
   viewer->addCoordinateSystem (1.0);
-  viewer->addPointCloud<pcl::PointXYZI>(cloud, std::to_string(ind));
+  cout << cloud->header.frame_id << "\n";
+
+  viewer->addPointCloud<pcl::PointXYZ>(cloud, std::to_string(ind));
+  viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 8, std::to_string(ind));
+  viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 255, 0, 0, std::to_string(ind));
+
   viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(ind));
   viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(ind));
   viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(ind));
   viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(ind));
   viewer->initCameraParameters ();
-  viewer->setCameraPosition(-1.25, 1.19, -0.29,1,1,1);
+  viewer->setCameraPosition(-1.80, 1.80, -0.40, 2.5, 2.5, 2.5);
+  viewer->saveScreenshot("screenshots/box" + std::to_string(ind) + ".png");
   while (!viewer->wasStopped ()){
-      viewer->spinOnce (1000);
+      viewer->spinOnce (100);
   }
 }
 
 
+struct comp
+{
+	template<typename T>
+	bool operator()(const T& l, const T& r) const
+	{ 
+		return l.first < r.first;
+	}
+};
 
-// Function to apply ANMS to each of the square points so that you have one point in a specified spatial area
-void applyANMS(pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud, double dist_tol) {
-    // pcl::PointCloud<pcl::PointXYZI>::Ptr ret_cloud(input_cloud);
-    pcl::ExtractIndices<pcl::PointXYZI> extract;
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-
-    // Take every point, and iterate through each other point to check if it's inside tolerance value
-    double min = INT_MAX;
-    std::unordered_map<int, int> smap;
-    for (int i = 0; i < input_cloud->points.size(); i++) {
-        for (int j = 0; j < input_cloud->points.size(); j++) {
-            if (!comparePoints(input_cloud->points[i], input_cloud->points[j])) {
-                min = std::min (getDist(input_cloud->points[i], input_cloud->points[j]), min);
-                if (getDist(input_cloud->points[i], input_cloud->points[j]) < dist_tol) {
-                    // auto point = std::find(ret_cloud->points.begin(), ret_cloud->points.end(), *it1);
-                    // ret_cloud->points.erase(point);
-                    // cout << "inliers\n";
-                    if (smap.find(j) == smap.end()) {
-                        inliers->indices.push_back(j);
-                    }
-                    smap[i] = 1; 
-                }
-            }
-        }
+void setSquare(Quad &square) {
+    VertexXYZ first_point = square.ver_list[0];
+    // square.ver_list.pop_back();
+    std::set<std::pair<double, VertexXYZ>, comp> square_set = 
+    {{getDist(square.ver_list[1], first_point), square.ver_list[1]}, 
+    {getDist(square.ver_list[2], first_point), square.ver_list[2]}, 
+    {getDist(square.ver_list[3], first_point), square.ver_list[3]}};
+    int i = 1;
+    for (auto &each_point : square_set) {
+        square.ver_list[i] = each_point.second;
+        // cout << each_po/int.first << "\n";
+        i++;
     }
-    extract.setInputCloud(input_cloud);
-    extract.setIndices(inliers);
-    extract.setNegative(true);
-    extract.filter(*input_cloud);
-    // cout << min << "\n";
-    // return ret_cloud;
-}
+    // cout << "new\n";
+    square.c1 = square.ver_list[0];
+    square.c2 = square.ver_list[1];
+    square.c3 = square.ver_list[3];
+    square.c4 = square.ver_list[2];
 
+}
 
 
 Quad getCollation(Quad source, const Quad target) {
@@ -229,27 +293,24 @@ Quad getCollation(Quad source, const Quad target) {
             ret_val = true;
             count++;
             copy_list.push_back(target.c4);
-            ind.push_back(4);
+            ind.push_back(check);
+            // ind.push_back(4);
         }
         check++;
     }
-    std::vector<VertexXYZ> make_quad_list;
+    std::vector<VertexXYZ> make_quad_list(source.ver_list);
     if (ret_val && count == 2) {
       // cout << count << " \n";
         for (int i = 0; i < target.ver_list.size(); i++) {
             if ((copy_list[0] != target.ver_list[i]) && (copy_list[1] != target.ver_list[i])) {
-                make_quad_list.push_back(target.ver_list[i]);
+                make_quad_list[ind.back()] = target.ver_list[i];
+                ind.pop_back();
             } 
         }
-        for (auto tar : source.ver_list) {
-            if ((copy_list[0] != tar) && (copy_list[1] != tar)) {
-                make_quad_list.push_back(tar);
-            } 
-     
-        }
+
         Quad ret_quad(make_quad_list[0], make_quad_list[1],
                   make_quad_list[2], make_quad_list[3], 2);
-
+        setSquare(ret_quad);
         return ret_quad;
         
     }
@@ -292,15 +353,35 @@ bool checkCollation(Quad source, const Quad target) {
   }
 
 
+void applyTransformation(Eigen::Matrix4f &transform, Quad &source_quad) {
+    for (auto &corner : source_quad.ver_list) {
+        Eigen::Vector4f corner_vec, corner_transformed;
+        corner_vec << corner.x , corner.y, corner.z, 1;
+        corner_vec = corner_vec.transpose();
+        corner_transformed = transform*corner_vec;
+        corner.x = corner_transformed(0);
+        corner.y = corner_transformed(1);
+        corner.z = corner_transformed(2);
+    }
+    source_quad.c1 = source_quad.ver_list[0];
+    source_quad.c2 = source_quad.ver_list[1];
+    source_quad.c3 = source_quad.ver_list[2];
+    source_quad.c4 = source_quad.ver_list[3];
+
+}
+
+
+
+
 
 int main (int argc, char** argv)
 {
   // Load input file into a PointCloud<T> with an appropriate type
-  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PCLPointCloud2 cloud_blob;
-  pcl::io::loadPCDFile ("/home/kartikmadhira/github/pcl_to_mesh/build/bridge_plane_2.pcd", cloud_blob);
-    // std::ofstream outfile1("quads_collated_0.txt");
-    // std::ofstream outfile("tri_collated_0.txt");
+  pcl::io::loadPCDFile ("/home/kartikmadhira/github/pcl_to_mesh/build/bridge_plane_0.pcd", cloud_blob);
+    // std::ofstream outfile1("quads_collated_2.txt");
+    // std::ofstream outfile("tri_collated_2.txt");
 
   // pcl::io::loadPCDFile ("/home/kartikmadhira/catkin_ws/src/pcl_filter/pcd_outputs/pcd_output.pcd", cloud_blob);
 
@@ -311,9 +392,11 @@ int main (int argc, char** argv)
 
   // Normal estimation*
 // Normal estimation*
-  pcl::NormalEstimation<pcl::PointXYZI, pcl::Normal> n;
-  pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
-  pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
+  pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>());
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+  tree.reset(new pcl::search::KdTree<pcl::PointXYZ>(false));
+
   tree->setInputCloud (cloud);
   n.setInputCloud (cloud);
   n.setSearchMethod (tree);
@@ -322,27 +405,127 @@ int main (int argc, char** argv)
   //* normals should not contain the point normals + surface curvatures
 
   // Concatenate the XYZ and normal fields*
-  pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointXYZINormal>);
+  pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
   pcl::concatenateFields (*cloud, *normals, *cloud_with_normals);
   //* cloud_with_normals = cloud + normals
 
   // Create search tree*
-  pcl::search::KdTree<pcl::PointXYZINormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointXYZINormal>);
+  pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal>);
   tree2->setInputCloud (cloud_with_normals);
 
-  pcl::GridProjection<pcl::PointXYZINormal> gp3;
-  pcl::PolygonMesh triangles;
+pcl::PolygonMesh triangles;
 
-  gp3.setInputCloud(cloud_with_normals);
-  gp3.setSearchMethod(tree2);
-  gp3.setResolution(0.05);
-  gp3.setPaddingSize(2);
-  gp3.reconstruct(triangles);
-  
-  std::cout << triangles.polygons[0].vertices.size() << " vertices\n";
-  pcl::PointCloud<pcl::PointXYZI>::Ptr mesh_cloud (new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::fromPCLPointCloud2(triangles.cloud, *mesh_cloud);
-  
+//   pcl::GridProjection<pcl::PointNormal> gp3;
+//   gp3.setInputCloud(cloud_with_normals);
+//   gp3.setSearchMethod(tree2);
+//   gp3.setResolution(0.05);
+//   gp3.setPaddingSize(2);
+//   // gp3.scaleInputDataPoint(4);
+//   gp3.reconstruct(*triangles);
+//   pcl::PointCloud<pcl::PointXYZ>::Ptr mesh_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+//   pcl::fromPCLPointCloud2(triangles->cloud, *mesh_cloud);
+// // Convert to Eigen format
+// const int npts = static_cast <int> ((mesh_cloud->size()));
+
+// Eigen::Matrix<float, 3, Eigen::Dynamic> cloud_src (3, npts);
+// Eigen::Matrix<float, 3, Eigen::Dynamic> cloud_tgt (3, npts);
+
+// for (int i = 0; i < npts; ++i)
+// {
+//       cloud_src (0, i) = mesh_cloud->points[i].x;
+//       cloud_src (1, i) = mesh_cloud->points[i].y;
+//       cloud_src (2, i) = mesh_cloud->points[i].z;
+
+//       cloud_tgt (0, i) = cloud->points[i].x;
+//       cloud_tgt (1, i) = cloud->points[i].y;
+//       cloud_tgt (2, i) = cloud->points[i].z;
+// }
+// Eigen::Matrix4f T;
+
+// // Call Umeyama directly from Eigen (PCL patched version until Eigen is released)
+// T = pcl::umeyama (cloud_src, cloud_tgt, true);
+
+// pcl::PointCloud<pcl::PointXYZ>::Ptr transformed (new pcl::PointCloud<pcl::PointXYZ>);
+// pcl::transformPointCloud(*mesh_cloud, *transformed, T/T(3,3));
+
+// pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+// icp.setInputSource(transformed);
+// icp.setInputTarget(cloud);
+
+// pcl::PointCloud<pcl::PointXYZ> Final;
+// icp.align(Final);
+
+
+// // Create a Convex Hull representation of the projected inliers
+// pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull_grid (new pcl::PointCloud<pcl::PointXYZ>);
+// pcl::ConcaveHull<pcl::PointXYZ> chull_grid;
+// // pcl::ConvexHull<pcl::PointXYZ>::MeshConstruction::
+// // chull_grid.
+// // chull_grid.per
+// chull_grid.setInputCloud (cloud);
+// chull_grid.reconstruct(mesh_out);
+
+// // cout << "The grid projection mesh has an area of" << chull_grid.getTotalArea() << "\n";
+
+
+// //   // Create a Convex Hull representation of the projected inliers
+// // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+// // pcl::ConvexHull<pcl::PointXYZ> chull_cloud;
+// // chull_cloud.setInputCloud (cloud);
+// // // chull_cloud.
+// // // chull_cloud.reconstruct();
+
+// // cout << "The original point cloud has an area of" << chull_cloud.getTotalArea() << "\n";
+// // float scale = chull_cloud.getTotalArea()/chull_grid.getTotalArea();
+// // cout << "scale is " << chull_cloud.getTotalArea() << "\n";
+
+// std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+// icp.getFitnessScore() << std::endl;
+// Eigen::Matrix4f T2 = icp.getFinalTransformation();
+// pcl::PointCloud<pcl::PointXYZ>::Ptr transformed2 (new pcl::PointCloud<pcl::PointXYZ>);
+// pcl::transformPointCloud(*transformed, *transformed2, (T2));
+
+
+
+
+  pcl::Poisson<pcl::PointNormal> poisson;
+  poisson.setDepth(4);
+  poisson.setOutputPolygons(true);
+  poisson.setInputCloud(cloud_with_normals);
+  // poisson.
+  poisson.setConfidence(true);
+  poisson.setScale(1);
+  poisson.setIsoDivide(6);
+  pcl::PolygonMesh mesh_out;
+
+  poisson.reconstruct(mesh_out);
+
+
+// boost::shared_ptr<pcl::PolygonMesh> mesh_out (new pcl::PolygonMesh(*triangles));
+removeUnwantedMeshes(cloud, mesh_out, triangles);
+
+
+
+  // // gp3.sca
+  // std::cout << triangles.polygons[0].vertices.size() << " vertices\n";
+  // float default_iso_level = 0.0f;
+  // int default_hoppe_or_rbf = 0;
+  // float default_extend_percentage = 0.0f;
+  // int default_grid_res = 50;
+  // float default_off_surface_displacement = 0.01f;
+  // pcl::MarchingCubesRBF<pcl::PointNormal> mc;
+  // mc.setIsoLevel (0.8);
+  // mc.setGridResolution (100, 100, 100);
+  // // mc.setPercentageExtendGrid (extend_percentage);
+  // mc.setInputCloud (cloud_with_normals);
+  // mc.setOffSurfaceDisplacement(1.5);
+  // mc.reconstruct(*triangles);
+
+
+
+
+
+  // triangles.cloud
   // std::vector<pcl::Vertices> first_list(triangles.polygons.begin(), triangles.polygons.end());
   // std::vector<pcl::Vertices> sec_list(first_list.begin(), first_list.end());
 
@@ -354,17 +537,26 @@ int main (int argc, char** argv)
   // //pass.setFilterLimitsNegative (true);
   // pass.filter (*mesh_cloud);
 
+//   Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+  pcl::PointCloud<pcl::PointXYZ>::Ptr mesh_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromPCLPointCloud2(triangles.cloud, *mesh_cloud);
+  // pcl::transformPointCloud (*cloud, *mesh_cloud, transform);
+//   // transformPolygonMesh(&triangles, transform);
+//   cout << transform(1,0) << transform(1,1) << transform(1,2) << transform(1,3) <<"\n";
+//   cout << transform(2,0) << transform(2,1) << transform(2,2) << transform(2,3) <<"\n";
+//   cout << transform(3,0) << transform(3,1) << transform(3,2) << transform(3,3) <<"\n";
+
   std::deque<Quad> q1;
 
-  // Store all the polygons int the Quad format in the respective ques;
-  // triangles.polygons[0].vertices[0].o
+//   // Store all the polygons int the Quad format in the respective ques;
+//   // triangles.polygons[0].vertices[0].o
   int count = 0;
 
-  // applyANMS(mesh_cloud, 0.0004);
-  // pcl::PolygonMesh new_quads;
-  // pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud (new pcl::PointCloud<pcl::PointXYZI>);
-  // getPolygons(mesh_cloud, new_quads, out_cloud);
-  // triangles.polygons[1] =  pcl::concatenateFields(triangles.polygons[1], triangles.polygons[2]);
+//   // applyANMS(mesh_cloud, 0.0004);
+//   // pcl::PolygonMesh new_quads;
+//   // pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud (new pcl::PointCloud<pcl::PointXYZI>);
+//   // getPolygons(mesh_cloud, new_quads, out_cloud);
+//   // triangles.polygons[1] =  pcl::concatenateFields(triangles.polygons[1], triangles.polygons[2]);
   for (auto &each_quad : triangles.polygons) {
     if (each_quad.vertices.size() == 4) {
         VertexXYZ c1(mesh_cloud->points[each_quad.vertices[0]].x,
@@ -389,7 +581,7 @@ int main (int argc, char** argv)
   }
 
   std::deque<Quad> q2(q1);
-// cout << "q1 size is" << q1.size() << "\n";
+// // cout << "q1 size is" << q1.size() << "\n";
 
       Quad first = q1.front();
   // cout << triangles.polygons.size() << "the polygons\n";
@@ -495,177 +687,183 @@ int main (int argc, char** argv)
 
   }
 
-// VertexXYZ c1(1, 0, 0);
-// VertexXYZ c2(2, 0, 0);
-// VertexXYZ c3(3, 0, 0);
-// VertexXYZ c4(4, 0, 0);
+// // VertexXYZ c1(1, 0, 0);
+// // VertexXYZ c2(2, 0, 0);
+// // VertexXYZ c3(3, 0, 0);
+// // VertexXYZ c4(4, 0, 0);
 
-// // Quad make_quad1(c1, c2, c3, c4);
+// // // Quad make_quad1(c1, c2, c3, c4);
 
-// VertexXYZ c11(23, 0, 0);
-// VertexXYZ c22(6, 0, 0);
-// VertexXYZ c33(7, 0, 0);
-// VertexXYZ c44(43, 0, 0);
+// // VertexXYZ c11(23, 0, 0);
+// // VertexXYZ c22(6, 0, 0);
+// // VertexXYZ c33(7, 0, 0);
+// // VertexXYZ c44(43, 0, 0);
 
-// // Quad make_quad2(c11, c22, c33, c44);
-
-
-// cout << "q2 size is" << q2.size() << "\n";
-
-// if (make_quad1 != make_quad2) {
-    // cout << " Quad Inequality runs properly\n";
-// }
-
-// if (checkCollation(make_quad1, make_quad2)) {
-//     for (auto &ver : make_quad1.ver_list) {
-//         cout << ver.x << " " << ver.y << " " << ver.z << "\n";
-//     }
-// }
+// // // Quad make_quad2(c11, c22, c33, c44);
 
 
+// // cout << "q2 size is" << q2.size() << "\n";
 
+// // if (make_quad1 != make_quad2) {
+//     // cout << " Quad Inequality runs properly\n";
+// // }
 
-
-      // VertexXYZ c2(mesh_cloud->points[each_quad.vertices[3]].x,
-      // mesh_cloud->points[each_quad.vertices[3]].y,
-      // mesh_cloud->points[each_quad.vertices[3]].z);
-
-      // VertexXYZ c3(mesh_cloud->points[each_quad.vertices[2]].x,
-      // mesh_cloud->points[each_quad.vertices[2]].y,
-      // mesh_cloud->points[each_quad.vertices[2]].z);
-
-      // VertexXYZ c4(mesh_cloud->points[each_quad.vertices[1]].x,
-      // mesh_cloud->points[each_quad.vertices[1]].y,
-      // mesh_cloud->points[each_quad.vertices[1]].z);
-
-      // Quad make_quad(c1, c2, c3, c4)
+// // if (checkCollation(make_quad1, make_quad2)) {
+// //     for (auto &ver : make_quad1.ver_list) {
+// //         cout << ver.x << " " << ver.y << " " << ver.z << "\n";
+// //     }
+// // }
 
 
 
 
-// cloud->points[triangles.polygons[0].vertices[0]].y  // for (auto &part : parts) {
-  //   std::cout << part;
-  // }
-  // std::ofstream outfile("triangles0.txt");
-  // std::ofstream outfile1("quads0.txt");
 
-  // outfile << "X \t Y\t Z \t \n";
-  // outfile1 << "X \t Y\t Z \t \n";
+//       // VertexXYZ c2(mesh_cloud->points[each_quad.vertices[3]].x,
+//       // mesh_cloud->points[each_quad.vertices[3]].y,
+//       // mesh_cloud->points[each_quad.vertices[3]].z);
 
-  // for (int i=0;i<triangles.polygons.size(); ++i) {
-  //   // std::string 
-  //   // outfile << setprecision(2) <<cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
-  //   // cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
-  //   // cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
+//       // VertexXYZ c3(mesh_cloud->points[each_quad.vertices[2]].x,
+//       // mesh_cloud->points[each_quad.vertices[2]].y,
+//       // mesh_cloud->points[each_quad.vertices[2]].z);
 
-  //   // outfile << cloud->points[triangles.polygons[i].vertices[1]].x << "\t" <<
-  //   // cloud->points[triangles.polygons[i].vertices[1]].y << "\t" <<
-  //   // cloud->points[triangles.polygons[i].vertices[1]].z << "\n";
+//       // VertexXYZ c4(mesh_cloud->points[each_quad.vertices[1]].x,
+//       // mesh_cloud->points[each_quad.vertices[1]].y,
+//       // mesh_cloud->points[each_quad.vertices[1]].z);
 
-  //   // outfile << cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
-  //   // cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
-  //   // cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
-
-
-
-  //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
-
-  //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[3]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[3]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[3]].z << "\n";
-
-  //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
-
-  //   // outfile << "\n";
-  //   outfile << "\n";
-
-  //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
-
-  //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[1]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[1]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[1]].z << "\n";
-
-  //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
-
-  //   // outfile << "\n";
-  //   outfile << "\n";
+//       // Quad make_quad(c1, c2, c3, c4)
 
 
 
 
-  //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
+// // cloud->points[triangles.polygons[0].vertices[0]].y  // for (auto &part : parts) {
+//   //   std::cout << part;
+//   // }
+//   // std::ofstream outfile("triangles0.txt");
+//   // std::ofstream outfile1("quads0.txt");
 
-  //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[3]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[3]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[3]].z << "\n";
+//   // outfile << "X \t Y\t Z \t \n";
+//   // outfile1 << "X \t Y\t Z \t \n";
 
-  //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
+//   // for (int i=0;i<triangles.polygons.size(); ++i) {
+//   //   // std::string 
+//   //   // outfile << setprecision(2) <<cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
+//   //   // cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
+//   //   // cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
 
-  //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[1]].x << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[1]].y << "\t" <<
-  //   mesh_cloud->points[triangles.polygons[i].vertices[1]].z << "\n";
+//   //   // outfile << cloud->points[triangles.polygons[i].vertices[1]].x << "\t" <<
+//   //   // cloud->points[triangles.polygons[i].vertices[1]].y << "\t" <<
+//   //   // cloud->points[triangles.polygons[i].vertices[1]].z << "\n";
 
-  //   // outfile << "\n";
-  //   outfile1 << "\n";
+//   //   // outfile << cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
+//   //   // cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
+//   //   // cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
+
+
+
+//   //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
+
+//   //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[3]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[3]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[3]].z << "\n";
+
+//   //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
+
+//   //   // outfile << "\n";
+//   //   outfile << "\n";
+
+//   //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
+
+//   //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[1]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[1]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[1]].z << "\n";
+
+//   //   outfile << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
+
+//   //   // outfile << "\n";
+//   //   outfile << "\n";
+
+
+
+
+//   //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[0]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[0]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[0]].z << "\n";
+
+//   //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[3]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[3]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[3]].z << "\n";
+
+//   //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[2]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[2]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[2]].z << "\n";
+
+//   //   outfile1 << setprecision(2) << mesh_cloud->points[triangles.polygons[i].vertices[1]].x << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[1]].y << "\t" <<
+//   //   mesh_cloud->points[triangles.polygons[i].vertices[1]].z << "\n";
+
+//   //   // outfile << "\n";
+//   //   outfile1 << "\n";
   
-  // }
-  // pcl::geometry::toHalfEdgeMesh(triangles, quads);
+//   // }
+//   // pcl::geometry::toHalfEdgeMesh(triangles, quads);
 
 
-  // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  // viewer->setBackgroundColor (0, 0, 0);
-  // viewer->addPolygonMesh (triangles,"meshes",0);
+//   // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+//   // viewer->setBackgroundColor (0, 0, 0);
+//   // viewer->addPolygonMesh (triangles,"meshes",0);
 
-  // pcl::PointCloud<pcl::PointXYZ>::Ptr test_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+//   // pcl::PointCloud<pcl::PointXYZ>::Ptr test_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-  // viewer->addPointCloud<pcl::PointXYZI>(mesh_cloud);
-// viewer->addPolygonMesh(new_quads, "meshses", 0);
+//   // viewer->addPointCloud<pcl::PointXYZI>(mesh_cloud);
 
-  // viewer->addPointCloud<pcl::PointXYZI>(mesh_cloud);
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("Point Cloud"));
+  viewer->addPolygonMesh(mesh_out , "meshses", 0); 
+  // viewer->addPointCloud<pcl::PointXYZ>(transformed2, "0");
+  viewer->addPointCloud<pcl::PointXYZ>(cloud, "0");
+
+  // viewer->addPointCloud<pcl::PointXYZ>(mesh_cloud, "1");
   int c = 0;
-    int cl = 0;
+  int cl = 0;
+  while (!q2.empty()) {
+      Quad test = q2.front();
+      // outfile1 << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
+      // outfile1 << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
+      // outfile1 << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
+      // outfile1 << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
+      // outfile1 << "\n";
 
-    while (!q2.empty()) {
-        Quad test = q2.front();
-        // outfile1 << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
-        // outfile1 << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
-        // outfile1 << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
-        // outfile1 << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
-        // outfile1 << "\n";
+      // outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
+      // outfile << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
+      // outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
+      // // outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
+      // outfile << "\n";
+      // outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
+      // outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
+      // outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
+      // outfile << "\n";
+    // viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
+    // viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 255, 0, 0, "line2"+ std::to_string(cl));
+    // viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 255, 0, 0, "line3"+ std::to_string(cl));
+    // viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 255, 0, 0,"line4"+ std::to_string(cl));
+    // applyTransformation(transform, test);
+    visualizeMesh(mesh_cloud, test, cl);
 
-        // outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
-        // outfile << test.c2.x << " " << test.c2.y << " " << test.c2.z << "\n";
-        // outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
-        // // outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
-        // outfile << "\n";
-        // outfile << test.c3.x << " " << test.c3.y << " " << test.c3.z << "\n";
-        // outfile << test.c4.x << " " << test.c4.y << " " << test.c4.z << "\n";
-        // outfile << test.c1.x << " " << test.c1.y << " " << test.c1.z << "\n";
-        // outfile << "\n";
-viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), 255,0,0,"line1"+ std::to_string(cl));
-  viewer->addLine(pcl::PointXYZ(test.c2.x, test.c2.y, test.c2.z), pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), 0, 255,0,"line2"+ std::to_string(cl));
-  viewer->addLine(pcl::PointXYZ(test.c3.x, test.c3.y, test.c3.z), pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), 0,0,255,"line3"+ std::to_string(cl));
-  viewer->addLine(pcl::PointXYZ(test.c4.x, test.c4.y, test.c4.z), pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), 123,123,123,"line4"+ std::to_string(cl));
-      // visualizeMesh(mesh_cloud, test, cl, viewer);
+    if (!q2.empty()) {
       q2.pop_front();
-      cl++;
-
-        // outfile1 << "\n";
-        // q2.pop_front();
     }
+    cl++;
+
+      // outfile1 << "\n";
+      // q2.pop_front();
+  }
 
 
 
@@ -673,23 +871,28 @@ viewer->addLine(pcl::PointXYZ(test.c1.x, test.c1.y, test.c1.z), pcl::PointXYZ(te
 
 
 
-  // }
-  // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[0]], mesh_cloud->points[triangles.polygons[3].vertices[2]], 255,0,0,"line2");
-  // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[3]], mesh_cloud->points[triangles.polygons[3].vertices[2]], 255,0,0,"line3");
-  // // viewer->addCircle()
-  // viewer->addSphere(mesh_cloud->points[triangles.polygons[3].vertices[0]],0.002,255,0,0,"sphere1");
-  // viewer->addSphere(mesh_cloud->points[triangles.polygons[3].vertices[1]],0.002,0,255,0,"sphere2");
-  // viewer->addSphere(mesh_cloud->points[triangles.polygons[3].vertices[2]],0.002,0,0,255,"sphere3");
+//   // }
+//   // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[0]], mesh_cloud->points[triangles.polygons[3].vertices[2]], 255,0,0,"line2");
+//   // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[3]], mesh_cloud->points[triangles.polygons[3].vertices[2]], 255,0,0,"line3");
+//   // // viewer->addCircle()
+//   // viewer->addSphere(mesh_cloud->points[triangles.polygons[3].vertices[0]],0.002,255,0,0,"sphere1");
+//   // viewer->addSphere(mesh_cloud->points[triangles.polygons[3].vertices[1]],0.002,0,255,0,"sphere2");
+//   // viewer->addSphere(mesh_cloud->points[triangles.polygons[3].vertices[2]],0.002,0,0,255,"sphere3");
 
-  // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[1]], mesh_cloud->points[triangles.polygons[3].vertices[2]], 0,255,0, "poly1");
+//   // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[1]], mesh_cloud->points[triangles.polygons[3].vertices[2]], 0,255,0, "poly1");
   // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[1]], mesh_cloud->points[triangles.polygons[3].vertices[0]], 0,255,0, "poly2");
   // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[0]], mesh_cloud->points[triangles.polygons[3].vertices[2]],  0,255,0,"poly3");
   // viewer->addLine(mesh_cloud->points[triangles.polygons[3].vertices[3]], mesh_cloud->points[triangles.polygons[3].vertices[0]],  0,255,0,"poly4");
 
   // viewer->addSphere(pcl::Vertices::vertices(q2.front().c1.x, q2.front().c1.y, q2.front().c1.z);
 
- viewer->addCoordinateSystem (1.0);
+  viewer->addCoordinateSystem (1.0);
   viewer->initCameraParameters ();
+  viewer->setCameraPosition(-1.80, 1.80, -0.40, 2.5, 2.5, 2.5);
+  viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "0");
+  viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 255, 0, 0, "0");
+  // viewer->addPointCloud()
+  // viewer->saveScreenshot("screenshots/allQuads.png");
   while (!viewer->wasStopped ()){
       viewer->spinOnce ();
       std::this_thread::sleep_for(std::chrono::microseconds(100000));
