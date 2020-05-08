@@ -3,10 +3,13 @@ project(pcl_filter)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
+#set(EIGEN3_INCLUDE_DIR "/home/kartikmadhira/Downloads/eigen-eigen-b3f3d4950030")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+#find_package(Eigen3 REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   pcl_ros
@@ -15,8 +18,9 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   eigen_conversions
   tf_conversions
+  cv_bridge
+  image_geometry
 )
-find_package(Eigen REQUIRED)
 
 #find_package(Boost REQUIRED COMPONENTS thread)
 #INCLUDE_DIRECTORIES ( "$ENV{EIGEN3_INCLUDE_DIR}" )
@@ -130,10 +134,15 @@ include_directories(
 )
 add_executable(pcl_filter src/box_filter.cpp)
 add_executable(velodyne_tf_pub src/velodyne_tf_pub.cpp)
+add_executable(intel_tf_pub src/intel_tf_pub.cpp)
+add_executable(pub_robust_pcl src/pub_robust_pcl.cpp)
+add_executable(image_acquire src/image_acquire.cpp)
 add_executable(dji_tf_pub src/dji_tf_pub.cpp)
 add_executable(transform_cloud_pub src/transform_cloud_pub.cpp)
 add_executable(register_multiple src/register_multiple.cpp)
 add_executable(odom_pub src/odom_pub.cpp)
+add_executable(transform_cloud_to_cam_frame src/3d_to_2d.cpp)
+add_executable(loam_to_world src/loam_to_world.cpp)
 
 
 target_link_libraries(pcl_filter ${catkin_LIBRARIES})
@@ -142,6 +151,13 @@ target_link_libraries(dji_tf_pub ${catkin_LIBRARIES})
 target_link_libraries(transform_cloud_pub ${catkin_LIBRARIES})
 target_link_libraries(register_multiple ${catkin_LIBRARIES})
 target_link_libraries(odom_pub ${catkin_LIBRARIES})
+target_link_libraries(intel_tf_pub ${catkin_LIBRARIES})
+target_link_libraries(pub_robust_pcl ${catkin_LIBRARIES})
+target_link_libraries(image_acquire ${catkin_LIBRARIES})
+target_link_libraries(transform_cloud_to_cam_frame ${catkin_LIBRARIES})
+target_link_libraries(loam_to_world ${catkin_LIBRARIES})
+
+#add_executable(3d_to_2d src/3d_to_2d.cpp)
 
 
 ## Declare a C++ library

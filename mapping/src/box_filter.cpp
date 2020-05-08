@@ -26,14 +26,14 @@ void pcl_callback(const sensor_msgs::PointCloud2ConstPtr& input_pcl, std::string
    	pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_y(new pcl::PointCloud<pcl::PointXYZI>);
     std::cout << topic << "\n";
     if (topic == "laser_cloud_surround") {
-        z_min = -5;
+        z_min = 5;
         z_max = 10;
-        x_min = -20;
-        x_max = 20;
+        x_min = -10;
+        x_max = 0;
         // z_min = -10;
         // z_max = +10;
-        y_min = -20;
-        y_max = 20;
+        y_min = -15;
+        y_max = 10;
         // x_min = -10;
         // x_max = +10;
     } else {
@@ -63,8 +63,8 @@ void pcl_callback(const sensor_msgs::PointCloud2ConstPtr& input_pcl, std::string
     pass_y.setFilterLimits(y_min, y_max);
     pass_y.filter(*cloud_filtered_y);
     
-    pcl::io::savePCDFile("/home/kartikmadhira/catkin_ws/src/pcl_filter/pcd_outputs/pcd_output.pcd",
-                         *cloud_filtered_y);
+    // pcl::io::savePCDFile("/home/kartikmadhira/catkin_ws/src/pcl_filter/pcd_outputs/pcd_output.pcd",
+    //                      *cloud_filtered_y);
 //  pcl::io::savePCDFile("/home/kartikmadhira/catkin_ws/src/pcl_filter/pcd_outputs/pcd_output.pcd",
 //                          *temp_cloud);
     sensor_msgs::PointCloud2 ros_output_cloud;
@@ -82,8 +82,8 @@ int main(int argc, char** argv) {
     std::string topic = argv[1];
     std::cout << "the topic being subscribed is " << topic << "\n";
     // ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>("velodyne_points", 1, boost::bind(&pcl_callback, _1, output_pcl));
-    ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>(topic, 0.1, boost::bind(pcl_callback, _1, topic));
+    ros::Subscriber sub = node_handler.subscribe<sensor_msgs::PointCloud2>(topic, 1, boost::bind(pcl_callback, _1, topic));
 
-    pub = node_handler.advertise<sensor_msgs::PointCloud2>("filtered", 0.1);
+    pub = node_handler.advertise<sensor_msgs::PointCloud2>("filtered", 1);
     ros::spin();
 }

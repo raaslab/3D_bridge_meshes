@@ -3,14 +3,6 @@
 #include <iostream>
 #include <sstream>
 #include <ros/ros.h>
-//#include <sensor_msgs/PointCloud2.h>
-
-#include <pcl/io/pcd_io.h>
-#include <ctime>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <tf/transform_listener.h>
-#include <tf_conversions/tf_eigen.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -18,6 +10,12 @@
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
+#include <pcl/io/pcd_io.h>
+#include <ctime>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 
 ros::Publisher pub;
@@ -33,19 +31,18 @@ void cloud_pub_callback(const sensor_msgs::PointCloud2ConstPtr &input_cloud) {
     tf::Vector3 origin;
     tf::Quaternion rot;
     tf::TransformListener tf_listener;
-    tf_listener.waitForTransform("velodyne", "world", ros::Time(), ros::Duration(1.0));
-    try {
-        tf_listener.lookupTransform("velodyne", "world", 
-                                        ros::Time(0), transformer);
+    tf_listener.waitForTransform( "/world", "/velodyne",  ros::Time(), ros::Duration(1.0));
+    try{
+      tf_listener.lookupTransform("/world", "/velodyne",  
+                                  ros::Time(0), transformer);
     }
-    catch (tf::TransformException exception) {
-        ROS_ERROR("%s", exception.what());
-        return;
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+      return;
     }
 
     origin = transformer.getOrigin();
     rot = transformer.getRotation();
-    rot.normalize();
     tf::transformTFToEigen(transformer, trans_eigen);
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr transform_cloud(new pcl::PointCloud<pcl::PointXYZI>);
@@ -61,10 +58,10 @@ void cloud_pub_callback(const sensor_msgs::PointCloud2ConstPtr &input_cloud) {
 }
 int main(int argc, char** argv) {
     
-    ros::init(argc, argv, "transform_cloud_pub");
+    ros::init(argc, argv, "pub_robust_pcl");
     ros::NodeHandle handler;
 
-    ros::Subscriber sub = handler.subscribe("velodyne_points", 1, cloud_pub_callback);
+    ros::Subscriber sub = handler.subscribe<sensor_msgs::PointCloud2>("velodyne_points", 1, cloud_pub_callback);
     
     pub = handler.advertise<sensor_msgs::PointCloud2>("transformed_cloud", 1);
     ros::spin();

@@ -1,42 +1,48 @@
 // Copyright 2019, RAAS lab
 #define _USE_MATH_DEFINES
- 
+
 #include <cmath>
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/Quaternion.h>
 
-int main(int argc, char** argv) {
-    // Initialize topic and broadcaster.
-    ros::init(argc, argv, "velodyne_tf_pub");
-    tf::TransformBroadcaster bcast;
-    
-    // Set the orientation of the sensor w.r.t vehicle
-    // Last used setup during the time this code was written 
-    // was the M600 UAV for bridge inspection
+int main(int argc, char** argv){
+	ros::init(argc, argv, "velodyne_tf_broadcaster");
 
-    tf::Quaternion sensor_ros;
-    sensor_ros.setRPY(0, M_PI_2, M_PI_2);
-    sensor_ros.normalize();
+    ros::NodeHandle nh;
 
-    // Initialize a transform object to send geometry messages information
-    tf::Transform tf;
+	tf::TransformBroadcaster br;
+	tf::Transform transform;
 
-    ros::Rate rate(10.0);
-    ROS_DEBUG_STREAM("Publisher frequency now running at: " << 10);
+	geometry_msgs::Quaternion orientation;
+	orientation.x = 0;
+	orientation.y = 0;
+	orientation.z = 0;
+	orientation.w = 1;
 
-    if (!ros::ok()) {
-        ROS_FATAL_STREAM("ROS nodes are not running!");
-    }
+	tf2::Quaternion q_orig, q_rot, q_new;
+
+	tf2::convert(orientation , q_orig);
+	// double r = -3*M_PI_2, p = -3*M_PI_2, y = -M_PI_2; // T265x numbered bag files
+	double r = 0, p = -3*M_PI_2, y = 0;
+
+	q_rot.setRPY(r, p, y);
+
+	q_new = q_rot * q_orig;
+	q_new.normalize();
 
 
-    while (ros::ok()) {
-        tf.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-        tf.setRotation(sensor_ros);        
-        // Publish transformation between dji and velodyne lidar.
-        bcast.sendTransform(tf::StampedTransform(tf, ros::Time::now(), "dji", "velodyne"));
-        rate.sleep();
-    }
+	ros::Rate rate(10.0);
+	while (nh.ok()){
+		transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
+		transform.setRotation( tf::Quaternion(q_new.x(), q_new.y(), q_new.z(), q_new.w()) );
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "cam_pose", "velodyne"));
+		rate.sleep();
+	}
+
     ros::spin();
-    return 0;
-}
+	return 0;
+};
+
+
