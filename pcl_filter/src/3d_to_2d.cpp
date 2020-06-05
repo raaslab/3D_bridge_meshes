@@ -114,13 +114,20 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
         // Only bridge
         cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(180, 30, 156), g_thresh);
 
+        //Wall Only
+        // cv::inRange(frame_HSV, cv::Scalar(0, 0, 118), cv::Scalar(176, 241, 242), g_thresh);
+
         cv::Mat elem = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
         // cv::morphologyEx(b_thresh, b_thresh, cv::MORPH_CLOSE, elem);
         cv::morphologyEx(g_thresh, g_thresh, cv::MORPH_CLOSE, elem);
 
+        // b_thresh = g_thresh;
+        // -------------
         cv::bitwise_not(g_thresh, b_thresh);
 
         cv::morphologyEx(b_thresh, b_thresh, cv::MORPH_CLOSE, elem);
+        //---------------
+
         // pcl::ExtractIndices<pcl::PointXYZI> extract------;;
         
         pcl::ExtractIndices<pcl::PointXYZRGB> extract;
@@ -179,7 +186,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
         // extract.filter(*color_cloud);
 
         counter++;
-        //cv::imwrite("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image" + std::to_string(counter) + ".jpg", image_cv_mat);
+        // cv::imwrite("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image" + std::to_string(counter) + ".jpg", image_cv_mat);
         // cv::imwrite("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image_t_" + std::to_string(counter) + ".jpg", b_thresh);
         // std::cout << transform_cloud->width << " " << transform_cloud->height << " " << transform_cloud->size();
         std::cout << inliers->indices.size() << "\n";
@@ -227,7 +234,7 @@ int main(int argc, char** argv) {
                                               image_acquire, pcl_acquire, cam_info_acquire);
     // Using these parameters of the sync policy, get the messages, which are synced
     sync_params.registerCallback(boost::bind(&sync_callback, _1, _2, _3));
-    pub = handler.advertise<sensor_msgs::PointCloud2>("transformed_cloud_image_frame", 0.5);
+    pub = handler.advertise<sensor_msgs::PointCloud2>("transformed_cloud_image_frame", 1);
     ros::spin();
     return 0;
 }

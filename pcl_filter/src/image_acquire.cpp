@@ -46,7 +46,7 @@ static void on_high_V_thresh_trackbar(int, void *)
 
 int main(int argc, char* argv[])
 {
-    cv::Mat input = imread("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image526.jpg");
+    cv::Mat input = imread("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image1.jpg");
     namedWindow(window_capture_name);
     namedWindow(window_detection_name);
     // Trackbars to set thresholds for HSV values
