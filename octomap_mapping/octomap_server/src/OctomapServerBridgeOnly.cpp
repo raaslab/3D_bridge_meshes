@@ -27,19 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <octomap_server/OctomapServer.h>
+#include <octomap_server/OctomapServerBridgeOnly.h>
 
 using namespace octomap;
 using octomap_msgs::Octomap;
 
-bool is_equal (double a, double b, double epsilon = 1.0e-7)
+bool is_equal_bridge (double a, double b, double epsilon = 1.0e-7)
 {
     return std::abs(a - b) < epsilon;
 }
 
 namespace octomap_server{
 
-OctomapServer::OctomapServer(const ros::NodeHandle private_nh_, const ros::NodeHandle &nh_)
+OctomapServerBridgeOnly::OctomapServerBridgeOnly(const ros::NodeHandle private_nh_, const ros::NodeHandle &nh_)
 : m_nh(nh_),
   m_nh_private(private_nh_),
   m_pointCloudSub(NULL),
@@ -165,28 +165,28 @@ OctomapServer::OctomapServer(const ros::NodeHandle private_nh_, const ros::NodeH
   } else
     ROS_INFO("Publishing non-latched (topics are only prepared as needed, will only be re-published on map change");
 
-  m_markerPub = m_nh.advertise<visualization_msgs::MarkerArray>("occupied_cells_vis_array", 1, m_latchedTopics);
-  m_binaryMapPub = m_nh.advertise<Octomap>("octomap_binary", 1, m_latchedTopics);
-  m_fullMapPub = m_nh.advertise<Octomap>("octomap_full", 1, m_latchedTopics);
-  m_pointCloudPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers", 1, m_latchedTopics);
-  m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map", 5, m_latchedTopics);
-  m_fmarkerPub = m_nh.advertise<visualization_msgs::MarkerArray>("free_cells_vis_array", 1, m_latchedTopics);
+  m_markerPub = m_nh.advertise<visualization_msgs::MarkerArray>("occupied_cells_vis_array_bridge", 1, m_latchedTopics);
+  m_binaryMapPub = m_nh.advertise<Octomap>("octomap_binary_bridge", 1, m_latchedTopics);
+  m_fullMapPub = m_nh.advertise<Octomap>("octomap_full_bridge", 1, m_latchedTopics);
+  m_pointCloudPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers_bridge", 1, m_latchedTopics);
+  m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map_bridge", 5, m_latchedTopics);
+  m_fmarkerPub = m_nh.advertise<visualization_msgs::MarkerArray>("free_cells_vis_array_bridge", 1, m_latchedTopics);
 
   m_pointCloudSub = new message_filters::Subscriber<sensor_msgs::PointCloud2> (m_nh, "cloud_in", 5);
   m_tfPointCloudSub = new tf::MessageFilter<sensor_msgs::PointCloud2> (*m_pointCloudSub, m_tfListener, m_worldFrameId, 5);
-  m_tfPointCloudSub->registerCallback(boost::bind(&OctomapServer::insertCloudCallback, this, _1));
+  m_tfPointCloudSub->registerCallback(boost::bind(&OctomapServerBridgeOnly::insertCloudCallback, this, _1));
 
-  m_octomapBinaryService = m_nh.advertiseService("octomap_binary", &OctomapServer::octomapBinarySrv, this);
-  m_octomapFullService = m_nh.advertiseService("octomap_full", &OctomapServer::octomapFullSrv, this);
-  m_clearBBXService = m_nh_private.advertiseService("clear_bbx", &OctomapServer::clearBBXSrv, this);
-  m_resetService = m_nh_private.advertiseService("reset", &OctomapServer::resetSrv, this);
+  m_octomapBinaryService = m_nh.advertiseService("octomap_binary", &OctomapServerBridgeOnly::octomapBinarySrv, this);
+  m_octomapFullService = m_nh.advertiseService("octomap_full", &OctomapServerBridgeOnly::octomapFullSrv, this);
+  m_clearBBXService = m_nh_private.advertiseService("clear_bbx", &OctomapServerBridgeOnly::clearBBXSrv, this);
+  m_resetService = m_nh_private.advertiseService("reset", &OctomapServerBridgeOnly::resetSrv, this);
 
   dynamic_reconfigure::Server<OctomapServerConfig>::CallbackType f;
-  f = boost::bind(&OctomapServer::reconfigureCallback, this, _1, _2);
+  f = boost::bind(&OctomapServerBridgeOnly::reconfigureCallback, this, _1, _2);
   m_reconfigureServer.setCallback(f);
 }
 
-OctomapServer::~OctomapServer(){
+OctomapServerBridgeOnly::~OctomapServerBridgeOnly(){
   if (m_tfPointCloudSub){
     delete m_tfPointCloudSub;
     m_tfPointCloudSub = NULL;
@@ -205,7 +205,7 @@ OctomapServer::~OctomapServer(){
 
 }
 
-bool OctomapServer::openFile(const std::string& filename){
+bool OctomapServerBridgeOnly::openFile(const std::string& filename){
   if (filename.length() <= 3)
     return false;
 
@@ -258,7 +258,7 @@ bool OctomapServer::openFile(const std::string& filename){
 
 }
 
-void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud){
+void OctomapServerBridgeOnly::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud){
   ros::WallTime startTime = ros::WallTime::now();
 
 
@@ -347,12 +347,12 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
   insertScan(sensorToWorldTf.getOrigin(), pc_ground, pc_nonground);
 
   double total_elapsed = (ros::WallTime::now() - startTime).toSec();
-  ROS_DEBUG("Pointcloud insertion in OctomapServer done (%zu+%zu pts (ground/nonground), %f sec)", pc_ground.size(), pc_nonground.size(), total_elapsed);
+  ROS_DEBUG("Pointcloud insertion in OctomapServerBridgeOnly done (%zu+%zu pts (ground/nonground), %f sec)", pc_ground.size(), pc_nonground.size(), total_elapsed);
 
   publishAll(cloud->header.stamp);
 }
 
-void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCloud& ground, const PCLPointCloud& nonground){
+void OctomapServerBridgeOnly::insertScan(const tf::Point& sensorOriginTf, const PCLPointCloud& ground, const PCLPointCloud& nonground){
   point3d sensorOrigin = pointTfToOctomap(sensorOriginTf);
 
   if (!m_octree->coordToKeyChecked(sensorOrigin, m_updateBBXMin)
@@ -480,7 +480,7 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
 
 
 
-void OctomapServer::publishAll(const ros::Time& rostime){
+void OctomapServerBridgeOnly::publishAll(const ros::Time& rostime){
   ros::WallTime startTime = ros::WallTime::now();
   size_t octomapSize = m_octree->size();
   // TODO: estimate num occ. voxels for size of arrays (reserve)
@@ -508,7 +508,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   visualization_msgs::MarkerArray occupiedNodesVis;
   // each array stores all cubes of a different size, one for each depth level:
   occupiedNodesVis.markers.resize(m_treeDepth+1);
-  // occupiedNodesVis
+
   // init pointcloud:
   pcl::PointCloud<PCLPoint> pclCloud;
 
@@ -518,8 +518,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   // now, traverse all leafs in the tree:
   for (OcTreeT::iterator it = m_octree->begin(m_maxTreeDepth),
       end = m_octree->end(); it != end; ++it)
-  { 
-    // m_octree->
+  {
     bool inUpdateBBX = isInUpdateBBX(it);
 
     // call general hook:
@@ -697,12 +696,12 @@ void OctomapServer::publishAll(const ros::Time& rostime){
 
 
   double total_elapsed = (ros::WallTime::now() - startTime).toSec();
-  ROS_DEBUG("Map publishing in OctomapServer took %f sec", total_elapsed);
+  ROS_DEBUG("Map publishing in OctomapServerBridgeOnly took %f sec", total_elapsed);
 
 }
 
 
-bool OctomapServer::octomapBinarySrv(OctomapSrv::Request  &req,
+bool OctomapServerBridgeOnly::octomapBinarySrv(OctomapSrv::Request  &req,
                                     OctomapSrv::Response &res)
 {
   ros::WallTime startTime = ros::WallTime::now();
@@ -717,7 +716,7 @@ bool OctomapServer::octomapBinarySrv(OctomapSrv::Request  &req,
   return true;
 }
 
-bool OctomapServer::octomapFullSrv(OctomapSrv::Request  &req,
+bool OctomapServerBridgeOnly::octomapFullSrv(OctomapSrv::Request  &req,
                                     OctomapSrv::Response &res)
 {
   ROS_INFO("Sending full map data on service request");
@@ -731,7 +730,7 @@ bool OctomapServer::octomapFullSrv(OctomapSrv::Request  &req,
   return true;
 }
 
-bool OctomapServer::clearBBXSrv(BBXSrv::Request& req, BBXSrv::Response& resp){
+bool OctomapServerBridgeOnly::clearBBXSrv(BBXSrv::Request& req, BBXSrv::Response& resp){
   point3d min = pointMsgToOctomap(req.min);
   point3d max = pointMsgToOctomap(req.max);
 
@@ -750,7 +749,7 @@ bool OctomapServer::clearBBXSrv(BBXSrv::Request& req, BBXSrv::Response& resp){
   return true;
 }
 
-bool OctomapServer::resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
+bool OctomapServerBridgeOnly::resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
   visualization_msgs::MarkerArray occupiedNodesVis;
   occupiedNodesVis.markers.resize(m_treeDepth +1);
   ros::Time rostime = ros::Time::now();
@@ -796,7 +795,7 @@ bool OctomapServer::resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Res
   return true;
 }
 
-void OctomapServer::publishBinaryOctoMap(const ros::Time& rostime) const{
+void OctomapServerBridgeOnly::publishBinaryOctoMap(const ros::Time& rostime) const{
 
   Octomap map;
   map.header.frame_id = m_worldFrameId;
@@ -808,7 +807,7 @@ void OctomapServer::publishBinaryOctoMap(const ros::Time& rostime) const{
     ROS_ERROR("Error serializing OctoMap");
 }
 
-void OctomapServer::publishFullOctoMap(const ros::Time& rostime) const{
+void OctomapServerBridgeOnly::publishFullOctoMap(const ros::Time& rostime) const{
 
   Octomap map;
   map.header.frame_id = m_worldFrameId;
@@ -822,12 +821,12 @@ void OctomapServer::publishFullOctoMap(const ros::Time& rostime) const{
 }
 
 
-void OctomapServer::filterGroundPlane(const PCLPointCloud& pc, PCLPointCloud& ground, PCLPointCloud& nonground) const{
+void OctomapServerBridgeOnly::filterGroundPlane(const PCLPointCloud& pc, PCLPointCloud& ground, PCLPointCloud& nonground) const{
   ground.header = pc.header;
   nonground.header = pc.header;
 
   if (pc.size() < 50){
-    ROS_WARN("Pointcloud in OctomapServer too small, skipping ground plane extraction");
+    ROS_WARN("Pointcloud in OctomapServerBridgeOnly too small, skipping ground plane extraction");
     nonground = pc;
   } else {
     // plane detection for ground plane removal:
@@ -931,7 +930,7 @@ void OctomapServer::filterGroundPlane(const PCLPointCloud& pc, PCLPointCloud& gr
 
 }
 
-void OctomapServer::handlePreNodeTraversal(const ros::Time& rostime){
+void OctomapServerBridgeOnly::handlePreNodeTraversal(const ros::Time& rostime){
   if (m_publish2DMap){
     // init projected 2D map:
     m_gridmap.header.frame_id = m_worldFrameId;
@@ -1041,41 +1040,41 @@ void OctomapServer::handlePreNodeTraversal(const ros::Time& rostime){
 
 }
 
-void OctomapServer::handlePostNodeTraversal(const ros::Time& rostime){
+void OctomapServerBridgeOnly::handlePostNodeTraversal(const ros::Time& rostime){
 
   if (m_publish2DMap)
     m_mapPub.publish(m_gridmap);
 }
 
-void OctomapServer::handleOccupiedNode(const OcTreeT::iterator& it){
+void OctomapServerBridgeOnly::handleOccupiedNode(const OcTreeT::iterator& it){
 
   if (m_publish2DMap && m_projectCompleteMap){
     update2DMap(it, true);
   }
 }
 
-void OctomapServer::handleFreeNode(const OcTreeT::iterator& it){
+void OctomapServerBridgeOnly::handleFreeNode(const OcTreeT::iterator& it){
 
   if (m_publish2DMap && m_projectCompleteMap){
     update2DMap(it, false);
   }
 }
 
-void OctomapServer::handleOccupiedNodeInBBX(const OcTreeT::iterator& it){
+void OctomapServerBridgeOnly::handleOccupiedNodeInBBX(const OcTreeT::iterator& it){
 
   if (m_publish2DMap && !m_projectCompleteMap){
     update2DMap(it, true);
   }
 }
 
-void OctomapServer::handleFreeNodeInBBX(const OcTreeT::iterator& it){
+void OctomapServerBridgeOnly::handleFreeNodeInBBX(const OcTreeT::iterator& it){
 
   if (m_publish2DMap && !m_projectCompleteMap){
     update2DMap(it, false);
   }
 }
 
-void OctomapServer::update2DMap(const OcTreeT::iterator& it, bool occupied){
+void OctomapServerBridgeOnly::update2DMap(const OcTreeT::iterator& it, bool occupied){
 
   // update 2D map (occupied always overrides):
 
@@ -1108,7 +1107,7 @@ void OctomapServer::update2DMap(const OcTreeT::iterator& it, bool occupied){
 
 
 
-bool OctomapServer::isSpeckleNode(const OcTreeKey&nKey) const {
+bool OctomapServerBridgeOnly::isSpeckleNode(const OcTreeKey&nKey) const {
   OcTreeKey key;
   bool neighborFound = false;
   for (key[2] = nKey[2] - 1; !neighborFound && key[2] <= nKey[2] + 1; ++key[2]){
@@ -1128,7 +1127,7 @@ bool OctomapServer::isSpeckleNode(const OcTreeKey&nKey) const {
   return neighborFound;
 }
 
-void OctomapServer::reconfigureCallback(octomap_server::OctomapServerConfig& config, uint32_t level){
+void OctomapServerBridgeOnly::reconfigureCallback(octomap_server::OctomapServerConfig& config, uint32_t level){
   if (m_maxTreeDepth != unsigned(config.max_depth))
     m_maxTreeDepth = unsigned(config.max_depth);
   else{
@@ -1145,21 +1144,21 @@ void OctomapServer::reconfigureCallback(octomap_server::OctomapServerConfig& con
     // will overwrite them because the server is not able to match parameters' names.
     if (m_initConfig){
 		// If parameters do not have the default value, dynamic reconfigure server should be updated.
-		if(!is_equal(m_groundFilterDistance, 0.04))
+		if(!is_equal_bridge(m_groundFilterDistance, 0.04))
           config.ground_filter_distance = m_groundFilterDistance;
-		if(!is_equal(m_groundFilterAngle, 0.15))
+		if(!is_equal_bridge(m_groundFilterAngle, 0.15))
           config.ground_filter_angle = m_groundFilterAngle;
-	    if(!is_equal( m_groundFilterPlaneDistance, 0.07))
+	    if(!is_equal_bridge( m_groundFilterPlaneDistance, 0.07))
           config.ground_filter_plane_distance = m_groundFilterPlaneDistance;
-        if(!is_equal(m_maxRange, -1.0))
+        if(!is_equal_bridge(m_maxRange, -1.0))
           config.sensor_model_max_range = m_maxRange;
-        if(!is_equal(m_octree->getProbHit(), 0.7))
+        if(!is_equal_bridge(m_octree->getProbHit(), 0.7))
           config.sensor_model_hit = m_octree->getProbHit();
-	    if(!is_equal(m_octree->getProbMiss(), 0.4))
+	    if(!is_equal_bridge(m_octree->getProbMiss(), 0.4))
           config.sensor_model_miss = m_octree->getProbMiss();
-		if(!is_equal(m_octree->getClampingThresMin(), 0.12))
+		if(!is_equal_bridge(m_octree->getClampingThresMin(), 0.12))
           config.sensor_model_min = m_octree->getClampingThresMin();
-		if(!is_equal(m_octree->getClampingThresMax(), 0.97))
+		if(!is_equal_bridge(m_octree->getClampingThresMax(), 0.97))
           config.sensor_model_max = m_octree->getClampingThresMax();
         m_initConfig = false;
 
@@ -1175,10 +1174,10 @@ void OctomapServer::reconfigureCallback(octomap_server::OctomapServerConfig& con
       m_octree->setClampingThresMax(config.sensor_model_max);
 
      // Checking values that might create unexpected behaviors.
-      if (is_equal(config.sensor_model_hit, 1.0))
+      if (is_equal_bridge(config.sensor_model_hit, 1.0))
 		config.sensor_model_hit -= 1.0e-6;
       m_octree->setProbHit(config.sensor_model_hit);
-	  if (is_equal(config.sensor_model_miss, 0.0))
+	  if (is_equal_bridge(config.sensor_model_miss, 0.0))
 		config.sensor_model_miss += 1.0e-6;
       m_octree->setProbMiss(config.sensor_model_miss);
 	}
@@ -1186,7 +1185,7 @@ void OctomapServer::reconfigureCallback(octomap_server::OctomapServerConfig& con
   publishAll();
 }
 
-void OctomapServer::adjustMapData(nav_msgs::OccupancyGrid& map, const nav_msgs::MapMetaData& oldMapInfo) const{
+void OctomapServerBridgeOnly::adjustMapData(nav_msgs::OccupancyGrid& map, const nav_msgs::MapMetaData& oldMapInfo) const{
   if (map.info.resolution != oldMapInfo.resolution){
     ROS_ERROR("Resolution of map changed, cannot be adjusted");
     return;
@@ -1227,7 +1226,7 @@ void OctomapServer::adjustMapData(nav_msgs::OccupancyGrid& map, const nav_msgs::
 }
 
 
-std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
+std_msgs::ColorRGBA OctomapServerBridgeOnly::heightMapColor(double h) {
 
   std_msgs::ColorRGBA color;
   color.a = 1.0;

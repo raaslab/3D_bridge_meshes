@@ -54,6 +54,7 @@ TrackingOctomapServer::TrackingOctomapServer(const std::string& filename) :
 
   ros::NodeHandle private_nh("~");
 
+  // std::string changeSetTopic = "changes";
   std::string changeSetTopic = "changes";
   std::string changeIdFrame = "/talker/changes";
 
@@ -123,7 +124,7 @@ void TrackingOctomapServer::trackChanges() {
 
     changedCells.push_back(pnt);
   }
-
+  std::cout << "changed cells are: " << c << "\n";
   if (c > min_change_pub)
   {
     sensor_msgs::PointCloud2 changed;
@@ -152,4 +153,35 @@ void TrackingOctomapServer::trackCallback(sensor_msgs::PointCloud2Ptr cloud) {
   ROS_DEBUG("[client] octomap size after updating: %d", (int)m_octree->calcNumNodes());
 }
 
-} /* namespace octomap */
+} 
+
+/* namespace octomap */
+
+
+
+
+// /* 
+//   for every point i in trimmed 
+
+// */
+
+// void GetBridgePoints (trimmed_octomap_voxel_centers_point_cloud, full_octomap_voxel_centers_point_cloud) {
+  
+//   for (auto each_point : trimmed_octomap_voxel_centers_point_cloud) {
+//       pcl::Point<PointT> map_point = nearest_neighbor_search(each_point, full_octomap_voxel_centers_point_cloud);
+//       map_point->isBridge = true;
+//   }
+// }
+
+
+// void updateBridgePoints() {
+  
+//     point_cloud_at_t_0 = trimmed_octomap_voxel_centers_point_cloud_at_t0;
+//     point_cloud_at_t_1 = trimmed_octomap_voxel_centers_point_cloud_at_t1;
+
+//     changeSet_trimmed_point_cloud = getSpatialChanges(point_cloud_at_t_0, point_cloud_at_t_1);
+
+//     GetBridgePoints(changeSet_trimmed_point_cloud, full_octomap_voxel_centers_point_cloud);
+
+
+// }

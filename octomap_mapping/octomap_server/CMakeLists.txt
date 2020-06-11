@@ -42,7 +42,7 @@ set(LINK_LIBS
   ${catkin_LIBRARIES}
 )
 
-add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerTrimmed.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
+add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerTrimmed.cpp src/OctomapServerBridgeOnly.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
@@ -56,6 +56,10 @@ target_link_libraries(octomap_server_node ${PROJECT_NAME} ${LINK_LIBS})
 
 add_executable(octomap_server_node_trimmed src/octomap_server_node_trimmed.cpp)
 target_link_libraries(octomap_server_node_trimmed ${PROJECT_NAME} ${LINK_LIBS})
+
+add_executable(octomap_server_node_bridge_only src/octomap_server_node_bridge_only.cpp)
+target_link_libraries(octomap_server_node_bridge_only ${PROJECT_NAME} ${LINK_LIBS})
+
 
 add_executable(octomap_color_server_node src/octomap_server_node.cpp)
 target_link_libraries(octomap_color_server_node ${PROJECT_NAME}_color ${LINK_LIBS})
