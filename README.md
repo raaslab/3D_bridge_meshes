@@ -50,3 +50,12 @@ roslaunch pcl_filter cloud_pub.launch
 | iribepart1.bag  | Iribe ground floor mapping  | no  | no  | yes | yes| no | Google Drive|  LOAM| |
 
 
+
+
+### Running all code
+1. 'roslaunch hector_moveit_gazebo final_bridge.launch'
+2. 'roslaunch pcl_filter cloud_pub.launch'
+3. 'rosrun octomap_server zFilter'
+4. 'roslaunch hector_moveit_navigation navigate.launch'
+5. 'rosrun gtsp gtsp_solver'
+6. 'rosrun octomap_server kevin'
