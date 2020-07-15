@@ -1,0 +1,18 @@
+<launch>
+  <arg 
+    name="pcl_sub_topic" 
+    default = "transformed_cloud"
+  />
+  <node pkg="pcl_filter" name="velodyne_tf_pub" type="velodyne_tf_pub"
+        output="screen" />
+  <node pkg="pcl_filter" name="dji_tf_pub" type="dji_tf_pub"
+        output="screen" />
+  <node pkg="pcl_filter" name="odom_pub" type="odom_pub"
+        output="screen" />
+  <node pkg="pcl_filter" name="transform_cloud_pub" type="transform_cloud_pub"
+        output="screen" />
+  <node pkg="pcl_filter" name="pcl_filter" type="pcl_filter" 
+        output="screen" args="$(arg pcl_sub_topic)"/>
+  <node pkg="pcl_filter" name="register_multiple" type="register_multiple"
+        output="screen" />
+</launch>

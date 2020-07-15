@@ -1,0 +1,18 @@
+<launch>
+  <arg name="rviz" default="true" />
+
+<group if="$(arg rviz)">
+      <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d /home/kartikmadhira/catkin_ws/default_map.rviz" />
+</group>
+<node pkg="rosbag" type="play" name="player" output="screen" args="/home/kartikmadhira/catkin_ws/t265p3.bag -r 0.5"/>
+
+<node pkg="pcl_filter" name="intel_tf_pub" type="intel_tf_pub"
+      output="screen" /> 
+<node pkg="pcl_filter" name="velodyne_tf_pub" type="velodyne_tf_pub"
+      output="screen" />
+
+<node pkg="pcl_filter" name="pub_robust_pcl" type="pub_robust_pcl"
+      output="screen" />
+<node pkg="pcl_filter" name="register_multiple" type="register_multiple"
+      output="screen" />
+</launch>
