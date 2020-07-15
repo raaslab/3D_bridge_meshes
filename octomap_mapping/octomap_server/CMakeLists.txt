@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(octomap_server)
+add_compile_options(-std=c++11)
 
 set(PACKAGE_DEPENDENCIES
   roscpp
@@ -78,6 +79,18 @@ target_link_libraries(octomap_server_nodelet ${PROJECT_NAME} ${LINK_LIBS})
 
 add_library(octomap_color_server_nodelet src/octomap_server_nodelet.cpp)
 target_link_libraries(octomap_color_server_nodelet ${PROJECT_NAME}_color ${LINK_LIBS})
+
+add_executable(kevin src/kevin.cpp)
+target_link_libraries(kevin ${PROJECT_NAME} ${LINK_LIBS})
+
+add_executable(zFilter src/zFilter.cpp)
+target_link_libraries(zFilter ${PROJECT_NAME} ${LINK_LIBS})
+
+add_executable(sandBox src/sandBox.cpp)
+target_link_libraries(sandBox ${PROJECT_NAME} ${LINK_LIBS})
+
+add_executable(markers src/markers.cpp)
+target_link_libraries(markers ${catkin_LIBRARIES})
 
 # install targets:
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_color
