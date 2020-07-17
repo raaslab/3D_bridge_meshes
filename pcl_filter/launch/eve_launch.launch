@@ -1,0 +1,31 @@
+<launch>
+  
+<!-- <node pkg="rosbag" type="play" name="player" output="screen" args="/home/kartikmadhira/catkin_ws/2020-04-29-22-25-11.bag -r 0.1"/> -->
+<include file="$(find hector_moveit_gazebo)/launch/final_bridge.launch"/>
+
+<include file="$(find pcl_filter)/launch/cloud_pub.launch"/>
+
+<node pkg="octomap_server" type="zFilter" name="zFilter"> </node>
+
+<include file="$(find  hector_moveit_navigation)/launch/navigate.launch"/>
+
+<node pkg="gtsp" type="gtsp_solver" name="gtsp_solver"> </node>
+
+<node pkg="octomap_server" type="kevin" name="kevin"> </node>
+
+
+
+
+<!-- <node pkg="rosbag" type="play" name="player" output="screen" args="/home/kartikmadhira/record_velodyne/lab_simple_2019-11-23-22-34-22.bag -s 2 -r 0.1"/>
+<include file="$(find loam_velodyne)/launch/loam_velodyne.launch"/> -->
+  <!-- <node pkg="pcl_filter" name="pcl_filter" type="pcl_filter" 
+        output="screen" args="$(arg pcl_sub_topic)"/> -->
+  <!-- <group if="$(arg rviz)">
+    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d /home/kartikmadhira/catkin_ws/src/pcl_filter/launch/loam.rviz" />
+  </group> -->
+<!-- <node pkg="tf" type="static_transform_publisher" name="kinect_link_to_kinect_2" 
+      args="0 0 0 0 0 3.14159 /camera_init /camera_init_reversed 5" /> -->
+  <!-- <group if="$(arg rviz)">
+    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d /home/kartikmadhira/catkin_ws/src/pcl_filter/lasunch/loam.rviz" />
+  </group> -->
+</launch>
