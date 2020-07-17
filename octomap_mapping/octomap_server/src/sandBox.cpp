@@ -13,7 +13,7 @@
 #include <octomap_msgs/conversions.h>
 #include <octomap/ColorOcTree.h>
 #include <pcl/io/pcd_io.h>
-#include "/home/user01/catkin_ws/src/octomap_mapping/octomap_server/include/octomap_server/kevin_functions.h"
+#include "../include/octomap_server/kevin_functions.h"
 #include <geometry_msgs/Pose.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>

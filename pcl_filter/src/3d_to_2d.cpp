@@ -57,25 +57,15 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);      
         pcl::fromPCLPointCloud2(pcl_input, *temp_cloud);
 
-
-
-
-        // Convert loam output to pcl::PointCloud type
-        // pcl::PCLPointCloud2 loam_input;
-        // // pcl_conversions::toPCL(*loam_cloud, pcl_input);
-        // pcl::PointCloud<pcl::PointXYZI>::Ptr temp_cloud_loam(new pcl::PointCloud<pcl::PointXYZI>); 
-        //pcl::fromPCLPointCloud2(pcl_input, *temp_cloud_loam);
-
-        // std::cout << input_cloud->header.frame_id << "\n";
         tf::TransformListener tf_listener;
         tf::StampedTransform transformer;
         // Eigen::Affine3d trans_eigen;
         tf::Vector3 origin;
         tf::Quaternion rot;
-        tf_listener.waitForTransform("camera_rgb_optical_frame", "laser0",ros::Time(0), ros::Duration(15.0));
+        tf_listener.waitForTransform("camera_rgb_optical_frame", "laser0_frame",ros::Time(0), ros::Duration(15.0));
 
         try {
-            tf_listener.lookupTransform("camera_rgb_optical_frame", "laser0",
+            tf_listener.lookupTransform("camera_rgb_optical_frame", "laser0_frame",
                                             ros::Time(0), transformer);
         }
         catch (tf::TransformException exception) {
@@ -107,10 +97,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
         cv::Mat g_thresh, b_thresh, frame_HSV;
         // std::cout << "00000000000000----- " << image_cv_mat.type() << "\n";
         cv::cvtColor(image_cv_mat, frame_HSV, cv::COLOR_BGR2HSV);
-        // Detect the object based on HSV Range Values
-        // cv::inRange(frame_HSV, cv::Scalar(24, 39, 0), cv::Scalar(123, 255, 239), g_thresh);
-        // cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(24, 74, 169), b_thresh);
-
+ 
         // Only bridge
         cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(180, 30, 156), g_thresh);
 
@@ -134,19 +121,13 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
         // pcl::ExtractIndices:: extract = new pcl::ExtractIndices<pcl::PointXYZI>();
         std::cout << (cam_info->K[0]) << " " << (cam_info->K[1]) << " " << (cam_info->K[2]) << "\n";
         for (int i = 0; i < transform_cloud->points.size(); i++) {
-            // int x = ((cam_info->K[0])*transform_cloud->points[i].x + cam_info->K[1]*transform_cloud->points[i].y +
-            //           cam_info->K[2]*transform_cloud->points[i].z);      
-            // int y = (cam_info->K[3]*transform_cloud->points[i].x + (cam_info->K[4])*transform_cloud->points[i].y +
-            //           cam_info->K[5]*transform_cloud->points[i].z);
-            // int z = cam_info->K[6]*transform_cloud->points[i].x + cam_info->K[7]*transform_cloud->points[i].y +
-            //           cam_info->K[8]*transform_cloud->points[i].z; 
+
 
             cv::Point3d pt(transform_cloud->points[i].x, transform_cloud->points[i].y, transform_cloud->points[i].z);
             cv::Point2f uv;
             uv = cam_model_.project3dToPixel(pt);
             if (uv.x > 0 && uv.x < cam_info->width && uv.y > 0 && uv.y < cam_info->height && transform_cloud->points[i].z > 0) {
-                // std::cout << int(g_thresh.at<uchar>(uv.y, uv.x)) << "\n";
-                // if ((int(g_thresh.at<uchar>(uv.y, uv.x)) < 200) && (int(b_thresh.at<uchar>(uv.y, uv.x)) < 200)) {
+
                 if (((int(b_thresh.at<uchar>(uv.y, uv.x)) < 200))) {
                     // std::cout << int(b_thresh.at<uchar>(uv.y, uv.x)) << "\n";
                     inliers->indices.push_back(i);
@@ -154,25 +135,12 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
                     temp_cloud->points[i].r = '0' + image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[2];
                     temp_cloud->points[i].g = '0' + image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[1];
                     temp_cloud->points[i].b = '0' + image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[0];
-                    // std::cout << '0' + temp_cloud->points[i].r << "\n";
-                    // << " " <<  (uint8_t)temp_cloud->points[i].g << " " << (uint8_t)temp_cloud->points[i].b << "\n";
-                    // std::cout << image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[2] + '0' << " " << image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[1] + '0' << " " <<
-                    //  image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[0] + '0'<< "\n";
-                    // image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[0] = 0;
-                    // image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[1] = 0;
-                    // image_cv_mat.at<cv::Vec3b>(uv.y, uv.x)[2] = 255;
+
                 }
             }
-            // if (uv.y < 0 || uv.y > (cam_info->height/2)) {
-            //     inliers->indices.push_back(i);
-            // }
 
         }
-        // transform_cloud.reset();
-        // transform_cloud->height = transform_cloud->height - inliers->indices.size();
-        // for (int i = 0; i < inliers->indices.size(); i++) {
-        //     transform_cloud->points.erase(transform_cloud->points.begin() + i);
-        // }
+
 
         extract.setInputCloud(temp_cloud);
         extract.setIndices(inliers);
@@ -180,15 +148,8 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image,
         extract.filter(*temp_cloud);
 
 
-        // extract.setInputCloud(color_cloud);
-        // extract.setIndices(inliers);
-        // extract.setNegative(false);
-        // extract.filter(*color_cloud);
-
         counter++;
-        // cv::imwrite("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image" + std::to_string(counter) + ".jpg", image_cv_mat);
-        // cv::imwrite("/home/kartikmadhira/Desktop/lab_updates/simulation/image_acquire/image_t_" + std::to_string(counter) + ".jpg", b_thresh);
-        // std::cout << transform_cloud->width << " " << transform_cloud->height << " " << transform_cloud->size();
+
         std::cout << inliers->indices.size() << "\n";
         sensor_msgs::PointCloud2 ros_output_cloud;
         pcl::PassThrough<pcl::PointXYZRGB> pass_y;
