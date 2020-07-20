@@ -37,6 +37,8 @@
 // #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/passthrough.h>
+#include <std_msgs/Float64MultiArray.h>
+
 
 #define MAX_TOUR_SIZE 25
 
@@ -59,6 +61,8 @@ bool length_ready = false;
 geometry_msgs::Pose currentPose;
 pcl::PointCloud<pcl::PointXYZ>::Ptr runningVisitedVoxels (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
+std::vector<double> zFilteredSize;
+
 
 
 
@@ -110,6 +114,14 @@ void zFiltered_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){
   // std::cout<<"size of zFiltered: " << tempCloudOccTrimmed->size() << std::endl;
 }
 
+void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
+  zFilteredSize.clear();
+  for(int i = 0;i<msg.data.size();i++){
+    zFilteredSize.push_back(msg.data.at(i));
+    // std::cout<<msg.data.at(i)<<std::endl;
+  }
+}
+
 
 int main(int argc, char** argv){
 // initializing ROS everything
@@ -133,6 +145,8 @@ int main(int argc, char** argv){
   ros::Subscriber tour_sub = n.subscribe("/gtsp_tour_list", 1, tourCallback);
   ros::Subscriber distance_sub = n.subscribe("/compute_path/length", 1, lengthCallback);
   ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
+  ros::Subscriber zFilteredSize_sub = n.subscribe("/zFilteredSize", 1, zFilteredSize_cb);
+
 
 // initializing arrays
   pcl::PointXYZ searchPoint;
@@ -150,7 +164,7 @@ int main(int argc, char** argv){
   float maxRadius = 1.5;
   float thresholdOcc = 1.0;
   float thresholdFree = 0.0;
-  int sizeOfUAV = 1;
+  float sizeOfUAV = 1.0;
   float tempID; int id4Markers; float markerSize;
   bool tspDone = false;
   int structureCovered = 0;
@@ -187,7 +201,7 @@ int main(int argc, char** argv){
   ros::Time totalRunTime = ros::Time::now();
 
   // TODO: Re-add this code once I have finished checking correctness.
-  /*hector_moveit_navigation::NavigationGoal goal;
+  hector_moveit_navigation::NavigationGoal goal;
   ROS_INFO("Waiting for action server to start");
   ac.waitForServer();
   ROS_INFO("Action server started");
@@ -241,14 +255,14 @@ int main(int argc, char** argv){
   else
     ROS_INFO("Takeoff did not finish before the time out");
 
-  ROS_INFO("Finished all takeoff maneuvers");*/
+  ROS_INFO("Finished all takeoff maneuvers");
 
   ROS_INFO("Waiting for gtsp_solver and distance_publisher to subscribe");
   ros::Rate poll_rate(100);
   while(point_cloud_publisher.getNumSubscribers() == 0)
     poll_rate.sleep();
-/*  while(goal_distance_publisher.getNumSubscribers() == 0)
-    poll_rate.sleep();*/
+  while(goal_distance_publisher.getNumSubscribers() == 0)
+    poll_rate.sleep();
 
 // problem is that GLNS will crash if empty set
   while (ros::ok()){
@@ -315,10 +329,12 @@ int main(int argc, char** argv){
     cloudOccFull->width = countOccFull; cloudOccFull->height = 1; cloudOccFull->points.resize (cloudOccFull->width * cloudOccFull->height);
     cloudUnknownFull->width = countUnknownFull; cloudUnknownFull->height = 1; cloudUnknownFull->points.resize (cloudUnknownFull->width * cloudUnknownFull->height);
     std::vector<double> freeSizeFull;
+    std::vector<double> occSizeFull;
     countFreeFull = 0; countOccFull = 0; countUnknownFull = 0;
     for(it = fullOcTree->begin_leafs(),endLeaf = fullOcTree->end_leafs();it!=endLeaf;++it){
       if(it->getValue()>thresholdOcc){
         cloudOccFull->points[countOccFull].x = it.getX(); cloudOccFull->points[countOccFull].y = it.getY(); cloudOccFull->points[countOccFull].z = it.getZ();
+        occSizeFull.push_back(it.getSize());
         countOccFull = countOccFull + 1;
       }
       else if(it->getValue()<thresholdFree){
@@ -379,6 +395,7 @@ int main(int argc, char** argv){
       }
     }
     std::cout<<"size after removing running visited from trimmed point cloud: " << cloudOccTrimmed->size() << std::endl;
+    std::cout<<"size of zFilteredSize: " <<zFilteredSize.size()<<std::endl;
     // std::cout<< "("<<std::endl;
     // for(int j = 0; j<cloudOccTrimmed->size();j++){
     //    std::cout<< cloudOccTrimmed->at(j)<<std::endl;
@@ -397,6 +414,7 @@ int main(int argc, char** argv){
       tempY1 = cloudOccTrimmed->points[j].y;
       tempZ1 = cloudOccTrimmed->points[j].z;
       tempPoints->clear();
+      // ROS_INFO("trimmed point (%f,%f,%f)\n",tempX1,tempY1,tempZ1);
       for(int i = 0; i<cloudFreeFull->size();i++){ // find in full free point cloud the usable points
         tempX2 = cloudFreeFull->points[i].x;
         tempY2 = cloudFreeFull->points[i].y;
@@ -407,20 +425,35 @@ int main(int argc, char** argv){
             if(abs(tempX1 - tempX2) > minRadius && abs(tempX1 - tempX2) < maxRadius){
                 // ROS_INFO("i = %d, j = %d",i,j);
             // if(radiusSearch(cloudOccFull,cloudFreeFull->points[i],sizeOfUAV)==0){
-                tempPoints->push_back(cloudFreeFull->points[i]);
+              tempPoints->push_back(cloudFreeFull->points[i]);
+              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YY ";
             // }
             }
+            else{
+              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YN ";
+            }
+          }
+          else{
+            // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")NN ";
           }
           if(checkIfFloatsAreTheSame(tempX1, tempX2, 100)){
             if(abs(tempY1 - tempY2) > minRadius && abs(tempY1 - tempY2) < maxRadius){
               // ROS_INFO("i = %d, j = %d",i,j);
             // if(radiusSearch(cloudOccFull,cloudFreeFull->points[i],sizeOfUAV)==0){
               tempPoints->push_back(cloudFreeFull->points[i]);
+              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YY ";
             // }
             }
+            else{
+              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YN ";
+            }
+          }
+          else{
+            // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")NN ";
           }
         }
       }
+      // std::cout<<std::endl<<std::endl;
       if(tempPoints->size()>0){
         viewPoints->push_back(cloudOccTrimmed->points[j]);
         numOfCluster++;
@@ -432,17 +465,17 @@ int main(int argc, char** argv){
     }
     std::cout << "cloud free size: " << cloudFreeFull->size() << std::endl;
 
-
-    // std::cout<< "("<<std::endl;
-    // for(int j = 0; j<viewPoints->size();j++){
-    //    std::cout<< viewPoints->at(j)<<std::endl;
-    // }
-    // std::cout<<")"<<std::endl;
+    std::ofstream myfile;
+    myfile.open("/home/user01/freePoints.txt");
+    for(int j = 0; j<cloudFreeFull->size();j++){
+       myfile<< cloudFreeFull->at(j)<< "size: " << freeSizeFull[j]<<std::endl;
+    }
+    myfile.close();
     // pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZ> testing (32.0f);
     
     // TODO: Re-add this code once I have finished checking correctness.
     ROS_INFO("Checking if there are clusters");
-    if(numOfCluster<2){ // the structure has been covered
+    if(numOfCluster<2){ // sthe structure has been covered
       ROS_INFO("No clusters");
       structureCovered = 1;
     }
@@ -501,7 +534,7 @@ int main(int argc, char** argv){
 
   // TODO: Re-add this code once I have finished checking correctness.
 // executes tour based on GTSP output
-/*    if(structureCovered == 1){ // going back to origin because no new viewpoints
+    if(structureCovered == 1){ // going back to origin because no new viewpoints
       goal.goal_pose.position.x = 0;
       goal.goal_pose.position.y = 0;
       goal.goal_pose.position.z = 0;
@@ -618,7 +651,7 @@ int main(int argc, char** argv){
         }
         // ROS_INFO("Current tour[%d] elapsed time: %d seconds",loopNumber+1, elapsed.sec);
       }
-    }*/
+    }
     // std::cout<<"running visited voxels: ";
     // for(int j=0;j<runningVisitedVoxels->size();j++){
     //   std::cout << runningVisitedVoxels->at(j)<<", ";
