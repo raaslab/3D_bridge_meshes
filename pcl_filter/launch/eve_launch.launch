@@ -1,17 +1,20 @@
 <launch>
-  
+<arg name="node_start_delay" default="2.0" />  
 <!-- <node pkg="rosbag" type="play" name="player" output="screen" args="/home/kartikmadhira/catkin_ws/2020-04-29-22-25-11.bag -r 0.1"/> -->
 <include file="$(find hector_moveit_gazebo)/launch/final_bridge.launch"/>
 
 <include file="$(find pcl_filter)/launch/cloud_pub.launch"/>
 
-<node pkg="octomap_server" type="zFilter" name="zFilter"> </node>
+
 
 <include file="$(find  hector_moveit_navigation)/launch/navigate.launch"/>
 
-<node pkg="gtsp" type="gtsp_solver" name="gtsp_solver"> </node>
+<node pkg="octomap_server" type="zFilter" name="zFilter" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@'"> </node>
 
-<node pkg="octomap_server" type="kevin" name="kevin"> </node>
+
+<node pkg="gtsp" type="gtsp_solver" name="gtsp_solver" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@'"> </node>
+
+<node pkg="octomap_server" type="kevin" name="kevin" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@'"> </node>
 
 
 
