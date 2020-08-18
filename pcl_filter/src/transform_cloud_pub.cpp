@@ -34,9 +34,12 @@ void cloud_pub_callback(const sensor_msgs::PointCloud2ConstPtr &input_cloud) {
     tf::Vector3 origin;
     tf::Quaternion rot;
     tf::TransformListener tf_listener;
-    tf_listener.waitForTransform( "world", "laser0", ros::Time(), ros::Duration(1.0));
+    // tf_listener.waitForTransform( "world", "laser0", ros::Time(), ros::Duration(1.0));
+    // try {
+    //     tf_listener.lookupTransform("world", "laser0",
+    tf_listener.waitForTransform( "world", "laser0_frame", ros::Time(), ros::Duration(1.0));
     try {
-        tf_listener.lookupTransform("world", "laser0" ,
+        tf_listener.lookupTransform("world", "laser0_frame" ,
                                         ros::Time(0), transformer);
     }
     catch (tf::TransformException exception) {
