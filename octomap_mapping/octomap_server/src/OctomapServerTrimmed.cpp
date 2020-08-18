@@ -171,6 +171,10 @@ OctomapServerTrimmed::OctomapServerTrimmed(const ros::NodeHandle private_nh_, co
   m_pointCloudPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers_trimmed", 1, m_latchedTopics);
   m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map_trimmed", 5, m_latchedTopics);
   m_fmarkerPub = m_nh.advertise<visualization_msgs::MarkerArray>("free_cells_vis_array_trimmed", 1, m_latchedTopics);
+  // m_markerNoZ = m_nh.advertise<visualization_msgs::MarkerArray>("occupied_cells_vis_array_trimmed_noZ", 1, m_latchedTopics);
+  // m_fullNoZ = m_nh.advertise<Octomap>("octomap_full_trimmed_noZ", 1, m_latchedTopics);
+
+
 
   m_pointCloudSub = new message_filters::Subscriber<sensor_msgs::PointCloud2> (m_nh, "cloud_in", 5);
   m_tfPointCloudSub = new tf::MessageFilter<sensor_msgs::PointCloud2> (*m_pointCloudSub, m_tfListener, m_worldFrameId, 5);

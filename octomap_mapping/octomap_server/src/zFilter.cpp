@@ -7,6 +7,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_msgs/Float64MultiArray.h>
+// #include <vector>
 
 // typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 // ros::Publisher occArrayTrimmed_pub;
@@ -16,6 +18,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOccFull (new pcl::PointCloud<pcl::Point
 visualization_msgs::MarkerArray zFiltered;
 uint32_t shape = visualization_msgs::Marker::CUBE;
 float trimmedHeight = 3;
+std::vector<double> outputVector;
+std_msgs::Float64MultiArray outputSize;
 
 
 void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
@@ -43,7 +47,7 @@ void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 		if(it->getValue()>thresholdOcc){
 			if(it.getZ()>trimmedHeight){
 				cloudOccFull->points[id4Markers].x = it.getX(); cloudOccFull->points[id4Markers].y = it.getY(); cloudOccFull->points[id4Markers].z = it.getZ();
-
+				outputVector.push_back(it.getSize());
 				zFilteredMarkers.pose.position.x = it.getX(); zFilteredMarkers.pose.position.y = it.getY(); zFilteredMarkers.pose.position.z = it.getZ();
 				zFilteredMarkers.id = id4Markers;
 				zFilteredMarkers.scale.x = markerSize; zFilteredMarkers.scale.y = markerSize; zFilteredMarkers.scale.z = markerSize;
@@ -59,6 +63,7 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "zFilter");
 	ros::NodeHandle n;
 	ros::Publisher output_pub = n.advertise<pcl::PointCloud<pcl::PointXYZ>> ("/zFiltered",1,true);
+	ros::Publisher outputSize_pub = n.advertise<std_msgs::Float64MultiArray> ("/zFilteredSize",1,true);
 	ros::Publisher zFiltered_pub = n.advertise<visualization_msgs::MarkerArray>("/zFiltered_Markers",1,true);
 
 	ros::Subscriber trimmedTree_sub = n.subscribe("octomap_full_trimmed",1,trimmed_cb);
@@ -70,8 +75,14 @@ int main(int argc, char** argv){
 		// ROS_INFO("While loop");
 		ros::spinOnce();
 		pcl_conversions::toPCL(ros::Time::now(), cloudOccFull->header.stamp);
+		outputSize.data.resize(outputVector.size());
+		for(int i = 0;i<outputVector.size();i++){
+			outputSize.data[i] = outputVector.at(i);
+		}
+		ROS_INFO("New size: %zu",outputSize.data.size());
 		if(cloudOccFull->size()){
 			output_pub.publish(cloudOccFull);
+			outputSize_pub.publish(outputSize);
 		}
 		if(zFiltered.markers.size()>2){
 			zFiltered_pub.publish(zFiltered);
@@ -79,5 +90,7 @@ int main(int argc, char** argv){
 		loop_rate.sleep();
 		zFiltered.markers.clear();
 		cloudOccFull->clear();
+		outputSize.data.clear();
+		outputVector.clear();
 	}
 }

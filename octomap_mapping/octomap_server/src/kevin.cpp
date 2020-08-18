@@ -33,8 +33,6 @@
 #include <list>
 #include <set>
 #include <pcl_ros/point_cloud.h>
-// #include <iostream>
-// #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/passthrough.h>
 #include <std_msgs/Float64MultiArray.h>
@@ -61,9 +59,7 @@ bool length_ready = false;
 geometry_msgs::Pose currentPose;
 pcl::PointCloud<pcl::PointXYZ>::Ptr runningVisitedVoxels (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
-std::vector<double> zFilteredSize;
-
-
+std::vector<double> tempzFilteredSize;
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
@@ -109,26 +105,27 @@ void zFiltered_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){
   tempCloudOccTrimmed->clear();
   BOOST_FOREACH(const pcl::PointXYZ& pt, msg->points){
     tempCloudOccTrimmed->points.push_back(pcl::PointXYZ(pt.x,pt.y,pt.z));
-    // printf ("\t(%f, %f, %f)\n", pt.x, pt.y, pt.z);
   }
-  // std::cout<<"size of zFiltered: " << tempCloudOccTrimmed->size() << std::endl;
 }
 
 void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
-  zFilteredSize.clear();
+  tempzFilteredSize.clear();
   for(int i = 0;i<msg.data.size();i++){
-    zFilteredSize.push_back(msg.data.at(i));
-    // std::cout<<msg.data.at(i)<<std::endl;
+    tempzFilteredSize.push_back(msg.data.at(i));
   }
 }
 
 
 int main(int argc, char** argv){
+  std::ofstream myfile;
+  myfile.open("/home/user01/testRunsBI/test2Info.txt");
+  std::ofstream myfile1;
+  myfile1.open("/home/user01/testRunsBI/test2Clusters.txt");
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
   actionlib::SimpleActionClient<hector_moveit_navigation::NavigationAction> ac("hector_navigator", true);
   ros::NodeHandle n;
-  ros::Rate r(0.2); // less than 1 is slower
+  ros::Rate r(0.05); // less than 1 is slower
   ros::Publisher occArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayTrimmed_pub",1,true);
   ros::Publisher freeArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/freeArrayTrimmed_pub",1,true);
   ros::Publisher occArrayFull_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayFull_pub",1,true);
@@ -160,8 +157,8 @@ int main(int argc, char** argv){
 // initializing variables and markers
   uint32_t shape = visualization_msgs::Marker::CUBE;
   int loopNumber = 0;
-  float minRadius = 0;
-  float maxRadius = 1.5;
+  float minRadius = 2;
+  float maxRadius = 6;
   float thresholdOcc = 1.0;
   float thresholdFree = 0.0;
   float sizeOfUAV = 1.0;
@@ -172,6 +169,9 @@ int main(int argc, char** argv){
   pcl::PointXYZ searchPoint2;
   octomap::OcTree::leaf_iterator it;
   octomap::OcTree::leaf_iterator endLeaf;
+  myfile<<"minRadius: "<<minRadius<<std::endl;
+  myfile<<"maxRadius: "<<maxRadius<<std::endl;
+  myfile<<"sizeOfUAV: "<<sizeOfUAV<<std::endl;
 
   visualization_msgs::Marker fullOccupiedMarkers; fullOccupiedMarkers.header.frame_id = "/world"; fullOccupiedMarkers.header.stamp = ros::Time::now(); fullOccupiedMarkers.ns = "occupied_markers_full";
   fullOccupiedMarkers.type = shape; fullOccupiedMarkers.action = visualization_msgs::Marker::ADD;
@@ -200,7 +200,6 @@ int main(int argc, char** argv){
 
   ros::Time totalRunTime = ros::Time::now();
 
-  // TODO: Re-add this code once I have finished checking correctness.
   hector_moveit_navigation::NavigationGoal goal;
   ROS_INFO("Waiting for action server to start");
   ac.waitForServer();
@@ -270,7 +269,6 @@ int main(int argc, char** argv){
 // initializing variables
     id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0; markerSize = 0;
 // getting sizes of free, occupied, and unknown for full octree
-    ROS_INFO("\nGetting occ and free of full and trimmed");
     for(it = fullOcTree->begin_leafs(),endLeaf = fullOcTree->end_leafs();it!=endLeaf;++it){
       markerSize = it.getSize();
       if(it->getValue()>thresholdOcc){
@@ -347,42 +345,13 @@ int main(int argc, char** argv){
         countUnknownFull = countUnknownFull + 1;
       }
     }
-
-// // creating point clouds for free, occupied, and unknown voxels for trimmed point cloud
-//     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudFreeTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
-//     pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
-//     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudUnknownTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
-//     cloudFreeTrimmed->width = countFreeTrimmed; cloudFreeTrimmed->height = 1; cloudFreeTrimmed->points.resize (cloudFreeTrimmed->width * cloudFreeTrimmed->height);
-//     tempCloudOccTrimmed->width = countOccTrimmed; tempCloudOccTrimmed->height = 1; tempCloudOccTrimmed->points.resize (tempCloudOccTrimmed->width * tempCloudOccTrimmed->height);
-//     cloudUnknownTrimmed->width = countUnknownTrimmed; cloudUnknownTrimmed->height = 1; cloudUnknownTrimmed->points.resize (cloudUnknownTrimmed->width * cloudUnknownTrimmed->height);
-//     std::vector<double> freeSizeTrimmed;
-//     countFreeTrimmed = 0; countOccTrimmed = 0; countUnknownTrimmed = 0;
-//     for(it = trimmedOcTree->begin_leafs(),endLeaf = trimmedOcTree->end_leafs();it!=endLeaf;++it){
-//       if(it->getValue()>thresholdOcc){
-//         tempCloudOccTrimmed->points[countOccTrimmed].x = it.getX(); tempCloudOccTrimmed->points[countOccTrimmed].y = it.getY(); tempCloudOccTrimmed->points[countOccTrimmed].z = it.getZ();
-//         countOccTrimmed = countOccTrimmed + 1;
-//       }
-//       else if(it->getValue()<thresholdFree){
-//         cloudFreeTrimmed->points[countFreeTrimmed].x = it.getX(); cloudFreeTrimmed->points[countFreeTrimmed].y = it.getY(); cloudFreeTrimmed->points[countFreeTrimmed].z = it.getZ();
-//         freeSizeTrimmed.push_back(it.getSize());
-//         countFreeTrimmed = countFreeTrimmed + 1;
-//       }
-//       else{
-//         cloudUnknownTrimmed->points[countUnknownTrimmed].x = it.getX(); cloudUnknownTrimmed->points[countUnknownTrimmed].y = it.getY(); cloudUnknownTrimmed->points[countUnknownTrimmed].z = it.getZ();
-//         countUnknownTrimmed = countUnknownTrimmed + 1;
-//       }
-//     }
     
     ROS_INFO("\nRemoving previously seen voxels");
     std::cout<<"trimmed point cloud size: " << tempCloudOccTrimmed->size() << std::endl;
     std::cout<<"running visited voxel size: " << runningVisitedVoxels->size() << std::endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
+    std::vector<double> zFilteredSize;
     int removeVoxel;
-    // std::cout<< "("<<std::endl;
-    // for(int j = 0; j<tempCloudOccTrimmed->size();j++){
-    //    std::cout<< tempCloudOccTrimmed->at(j)<<std::endl;
-    // }
-    // std::cout<<")"<<std::endl;
     for(int j=0;j<tempCloudOccTrimmed->size();j++){
       removeVoxel = 0;
       for(int i=0;i<runningVisitedVoxels->size();i++){
@@ -392,109 +361,47 @@ int main(int argc, char** argv){
       }
       if(removeVoxel == 0){
         cloudOccTrimmed->push_back(tempCloudOccTrimmed->at(j));
+        zFilteredSize.push_back(tempzFilteredSize.at(j));
       }
     }
     std::cout<<"size after removing running visited from trimmed point cloud: " << cloudOccTrimmed->size() << std::endl;
     std::cout<<"size of zFilteredSize: " <<zFilteredSize.size()<<std::endl;
-    // std::cout<< "("<<std::endl;
-    // for(int j = 0; j<cloudOccTrimmed->size();j++){
-    //    std::cout<< cloudOccTrimmed->at(j)<<std::endl;
-    // }
-    // std::cout<<")"<<std::endl;
 
-    ROS_INFO("Finding cluster points");
     float tempX1; float tempY1; float tempZ1; float tempX2; float tempY2; float tempZ2;
     pcl::PointCloud<pcl::PointXYZ>::Ptr tempPoints (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr clusteredPoints (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr viewPoints (new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<int> point2ClusterMapping;
+    std::vector<double> tempRes;
     int numOfCluster = 0;
+    myfile1<<"===="<<loopNumber<<"===="<<std::endl;
     for(int j = 0; j<cloudOccTrimmed->size();j++){
       tempX1 = cloudOccTrimmed->points[j].x;
       tempY1 = cloudOccTrimmed->points[j].y;
       tempZ1 = cloudOccTrimmed->points[j].z;
       tempPoints->clear();
-      // ROS_INFO("trimmed point (%f,%f,%f)\n",tempX1,tempY1,tempZ1);
-      for(int i = 0; i<cloudFreeFull->size();i++){ // find in full free point cloud the usable points
-        tempX2 = cloudFreeFull->points[i].x;
-        tempY2 = cloudFreeFull->points[i].y;
-        tempZ2 = cloudFreeFull->points[i].z;
-        if(checkIfFloatsAreTheSame(tempZ1, tempZ2, 100)){
-          // ROS_INFO("Comparing (%f, %f, %f) with (%f, %f, %f)", tempX1, tempY1, tempZ1, tempX2, tempY2, tempZ2);
-          if(checkIfFloatsAreTheSame(tempY1, tempY2, 100)){
-            if(abs(tempX1 - tempX2) > minRadius && abs(tempX1 - tempX2) < maxRadius){
-                // ROS_INFO("i = %d, j = %d",i,j);
-            // if(radiusSearch(cloudOccFull,cloudFreeFull->points[i],sizeOfUAV)==0){
-              tempPoints->push_back(cloudFreeFull->points[i]);
-              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YY ";
-            // }
-            }
-            else{
-              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YN ";
-            }
-          }
-          else{
-            // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")NN ";
-          }
-          if(checkIfFloatsAreTheSame(tempX1, tempX2, 100)){
-            if(abs(tempY1 - tempY2) > minRadius && abs(tempY1 - tempY2) < maxRadius){
-              // ROS_INFO("i = %d, j = %d",i,j);
-            // if(radiusSearch(cloudOccFull,cloudFreeFull->points[i],sizeOfUAV)==0){
-              tempPoints->push_back(cloudFreeFull->points[i]);
-              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YY ";
-            // }
-            }
-            else{
-              // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")YN ";
-            }
-          }
-          else{
-            // std::cout<<"("<<tempX2<<","<<tempY2<<","<<tempZ2<<")NN ";
-          }
-        }
-      }
-      // std::cout<<std::endl<<std::endl;
+      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints,&tempRes);
+        myfile1<<j<<". view point: ";
+        myfile1<<cloudOccTrimmed->points[j]<<std::endl;
       if(tempPoints->size()>0){
         viewPoints->push_back(cloudOccTrimmed->points[j]);
         numOfCluster++;
+        myfile1<<"clustered points: ";
       }
       for(int i = 0; i<tempPoints->size();i++){
         clusteredPoints->push_back(tempPoints->points[i]);
         point2ClusterMapping.push_back(numOfCluster);
+        myfile1<<tempPoints->points[i]<<" "<<tempRes[i]<<", ";
       }
+      myfile1<<std::endl;
     }
     std::cout << "cloud free size: " << cloudFreeFull->size() << std::endl;
-
-    std::ofstream myfile;
-    myfile.open("/home/user01/freePoints.txt");
-    for(int j = 0; j<cloudFreeFull->size();j++){
-       myfile<< cloudFreeFull->at(j)<< "size: " << freeSizeFull[j]<<std::endl;
-    }
-    myfile.close();
-    // pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZ> testing (32.0f);
-    
-    // TODO: Re-add this code once I have finished checking correctness.
-    ROS_INFO("Checking if there are clusters");
-    if(numOfCluster<2){ // sthe structure has been covered
+        
+    if(numOfCluster<2){ // the structure has been covered
       ROS_INFO("No clusters");
       structureCovered = 1;
     }
     else{ // sending usable point cloud to Naik's code
-      // std::cout<<"viewPoints (occupied trimmed): ";
-      // for(int j=0;j<viewPoints->size();j++){
-      //   std::cout << viewPoints->at(j) << ", ";
-      // }
-      // std::cout << std::endl;
-      // std::cout<<"clustered points (points that were added to the GTSP): ";
-      // for(int j=0;j<clusteredPoints->size();j++){
-      //   std::cout << clusteredPoints->at(j)<<", ";
-      // }
-      // std::cout << std::endl;
-      // std::cout<<"point 2 cluster mapping: ";
-      // for(int j=0;j<point2ClusterMapping.size();j++){
-      //   std::cout << point2ClusterMapping.at(j)<<", ";
-      // }
-      // std::cout<<std::endl;
       ROS_INFO("Sending usable graph to gtsp solver");
       gtsp::GTSPData gtsp_data;
       pcl::PCLPointCloud2 pcl_pc;
@@ -507,7 +414,6 @@ int main(int argc, char** argv){
       gtsp_data.pointClusterMapping = point2ClusterMapping;
       std::cout<<"Number of clusters: "<<numOfCluster<<"\nClustered points size: "<<clusteredPoints->size()<<"\nCluster mapping size: "<<point2ClusterMapping.size()<<std::endl;
 
-      ROS_INFO("Publishing point cloud and waiting on gtsp tour");
       gtspData_pub.publish(gtsp_data);
       while(!tour_ready){
         ros::spinOnce();
@@ -519,20 +425,10 @@ int main(int argc, char** argv){
 
 // publishing voxel arrays
     occArrayTrimmed_pub.publish(occArrayTrimmed);
-    // std::cout << "occupied array trimmed: " << occArrayTrimmed.markers.size() << std::endl;
     freeArrayTrimmed_pub.publish(freeArrayTrimmed);
-    // std::cout << "free array trimmed: " << freeArrayTrimmed.markers.size() << std::endl;
     occArrayFull_pub.publish(occArrayFull);
-    // std::cout << "occupied array full: " << occArrayFull.markers.size() << std::endl;
     freeArrayFull_pub.publish(freeArrayFull);
-    // std::cout << "free array full: " << freeArrayFull.markers.size() << std::endl;
-    // impossibleArray_pub.publish(impossibleArray);
-    // // std::cout << "impossible array: " << impossibleArray.markers.size() << std::endl;
-    // usableArray_pub.publish(usableArray);
-    // // std::cout << "usable array: " << usableArray.markers.size() << std::endl;
 
-
-  // TODO: Re-add this code once I have finished checking correctness.
 // executes tour based on GTSP output
     if(structureCovered == 1){ // going back to origin because no new viewpoints
       goal.goal_pose.position.x = 0;
@@ -559,7 +455,6 @@ int main(int argc, char** argv){
     else{
       ros::Time startTime = ros::Time::now();
       ros::Duration elapsed = ros::Time::now()-startTime;
-      ROS_INFO("KNN Trees");
       pcl::KdTree<pcl::PointXYZ>::Ptr gtspTree (new pcl::KdTreeFLANN<pcl::PointXYZ>);
       gtspTree->setInputCloud(clusteredPoints);
       std::vector<int> nn_indices (numOfCluster);
@@ -575,7 +470,6 @@ int main(int argc, char** argv){
           currentPoint++;
         }
       }
-      // std::vector<int>::iterator it=std::find(tour.begin(),tour.end(),tour[nn_indices[currentPoint]]);
       int countMoveit = 0;
       int orientationStatus = 0;
       tspDone = false;
@@ -593,7 +487,10 @@ int main(int argc, char** argv){
         goal.goal_pose.position.x = clusteredPoints->points[tour[currentPointNumber]-1].x;
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
         goal.goal_pose.position.z = clusteredPoints->points[tour[currentPointNumber]-1].z;
-        ROS_INFO("\nCurrent index in tour: %d\nCurrent point in tour: %d\nMoving to point: (%f,%f,%f)",currentPointNumber,tour[currentPointNumber],goal.goal_pose.position.x,goal.goal_pose.position.y,goal.goal_pose.position.z);
+        // ROS_INFO("\nCurrent index in tour: %d\nCurrent point in tour: %d\nMoving to point: (%f,%f,%f)",currentPointNumber,tour[currentPointNumber],goal.goal_pose.position.x,goal.goal_pose.position.y,goal.goal_pose.position.z);
+        std::cout<<"Current index in tour: "<<currentPointNumber<<std::endl;
+        std::cout<<"Current point in tour: "<<tour[currentPointNumber]<<std::endl;
+        std::cout<<"Moving to point: ("<<goal.goal_pose.position.x<<","<<goal.goal_pose.position.y<<","<<goal.goal_pose.position.z<<")"<<std::endl;
         tf2::Quaternion UAVOrientation;
         switch(orientationStatus){
           case 0:
@@ -627,7 +524,6 @@ int main(int argc, char** argv){
         if(finished_before_timeout){ // waiting for 30 seconds to reach goal before sending next point
           actionlib::SimpleClientGoalState state = ac.getState();
           int clusterNumber = point2ClusterMapping.at(tour[currentPointNumber]-1);
-          // viewPoints->at(clusterNumber-1);
           pcl::PointXYZ tempPoint(viewPoints->at(clusterNumber-1).x,viewPoints->at(clusterNumber-1).y,viewPoints->at(clusterNumber-1).z);
           runningVisitedVoxels->push_back(tempPoint);
           ROS_INFO("Action finished: %s", state.toString().c_str());
@@ -649,15 +545,10 @@ int main(int argc, char** argv){
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
-        // ROS_INFO("Current tour[%d] elapsed time: %d seconds",loopNumber+1, elapsed.sec);
       }
     }
-    // std::cout<<"running visited voxels: ";
-    // for(int j=0;j<runningVisitedVoxels->size();j++){
-    //   std::cout << runningVisitedVoxels->at(j)<<", ";
-    // }
+
     std::cout<<std::endl;
-    // std::cout << runningVisitedVoxels->size() << std::endl;
     ROS_INFO("Clearing all voxel maps stored");
     occArrayTrimmed.markers.clear();
     freeArrayTrimmed.markers.clear();
@@ -666,12 +557,14 @@ int main(int argc, char** argv){
     impossibleArray.markers.clear();
     usableArray.markers.clear();
 
-    std::cout << "=============loop number: " << loopNumber+1 << "========================" << std::endl; // outputting loop number
+    std::cout<<"=============loop number: "<<loopNumber+1<<"========================"<<std::endl; // outputting loop number
     loopNumber++;
     r.sleep();
   }
 
   ros::Duration elapsedTotalTime = ros::Time::now()-totalRunTime;
   ROS_INFO("Total run time: %d seconds",elapsedTotalTime.sec);
+  myfile.close();
+  myfile1.close();
   return 0;
 }

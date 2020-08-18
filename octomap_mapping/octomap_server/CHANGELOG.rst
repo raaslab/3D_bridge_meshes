@@ -2,12 +2,6 @@
 Changelog for package octomap_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.6.5 (2020-04-23)
-------------------
-* Add color server nodelet (`#68 <https://github.com/OctoMap/octomap_mapping/issues/68>`_, `#67 <https://github.com/OctoMap/octomap_mapping/issues/67>`_)
-* Updated maintainer email
-* Contributors: clunietp, Wolfgang Merkt
-
 0.6.4 (2020-01-08)
 ------------------
 * Add private node handle to fix nodelet support (`#61 <https://github.com/OctoMap/octomap_mapping/issues/61>`_), fixes `#39 <https://github.com/OctoMap/octomap_mapping/issues/39>`_
