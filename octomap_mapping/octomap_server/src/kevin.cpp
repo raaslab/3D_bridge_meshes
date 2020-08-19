@@ -118,9 +118,9 @@ void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
 
 int main(int argc, char** argv){
   std::ofstream myfile;
-  myfile.open("/home/user01/testRunsBI/test2Info.txt");
+  myfile.open("/home/user01/testRunsBI/test1Info.txt");
   std::ofstream myfile1;
-  myfile1.open("/home/user01/testRunsBI/test2Clusters.txt");
+  myfile1.open("/home/user01/testRunsBI/test1Clusters.txt");
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
   actionlib::SimpleActionClient<hector_moveit_navigation::NavigationAction> ac("hector_navigator", true);
