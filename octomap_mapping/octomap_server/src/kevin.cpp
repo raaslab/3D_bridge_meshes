@@ -373,6 +373,8 @@ int main(int argc, char** argv){
     pcl::PointCloud<pcl::PointXYZ>::Ptr viewPoints (new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<int> point2ClusterMapping;
     std::vector<double> tempRes;
+    std::vector<float> tempOrientation;
+    std::vector<float> orientationOfCPs;
     int numOfCluster = 0;
     myfile1<<"===="<<loopNumber<<"===="<<std::endl;
     for(int j = 0; j<cloudOccTrimmed->size();j++){
@@ -380,7 +382,7 @@ int main(int argc, char** argv){
       tempY1 = cloudOccTrimmed->points[j].y;
       tempZ1 = cloudOccTrimmed->points[j].z;
       tempPoints->clear();
-      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints,&tempRes);
+      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints,&tempRes,&tempOrientation);
         myfile1<<j<<". view point: ";
         myfile1<<cloudOccTrimmed->points[j]<<std::endl;
       if(tempPoints->size()>0){
@@ -391,6 +393,7 @@ int main(int argc, char** argv){
       for(int i = 0; i<tempPoints->size();i++){
         clusteredPoints->push_back(tempPoints->points[i]);
         point2ClusterMapping.push_back(numOfCluster);
+        orientationOfCPs.push_back(tempOrientation[i]);
         myfile1<<tempPoints->points[i]<<" "<<tempRes[i]<<", ";
       }
       myfile1<<std::endl;
@@ -471,7 +474,6 @@ int main(int argc, char** argv){
         }
       }
       int countMoveit = 0;
-      int orientationStatus = 0;
       tspDone = false;
       int currentPointNumber = -1;
       for(int j=0;j<tour.size();j++){
@@ -492,26 +494,7 @@ int main(int argc, char** argv){
         std::cout<<"Current point in tour: "<<tour[currentPointNumber]<<std::endl;
         std::cout<<"Moving to point: ("<<goal.goal_pose.position.x<<","<<goal.goal_pose.position.y<<","<<goal.goal_pose.position.z<<")"<<std::endl;
         tf2::Quaternion UAVOrientation;
-        switch(orientationStatus){
-          case 0:
-            UAVOrientation.setRPY(0,0,0);
-            orientationStatus++;
-            break;
-          case 1:
-            UAVOrientation.setRPY(0,0,M_PI_2);
-            orientationStatus++;
-            break;
-          case 2:
-            UAVOrientation.setRPY(0,0,M_PI);
-            orientationStatus++;
-            break;
-          case 3:
-            UAVOrientation.setRPY(0,0,-M_PI_2);
-            orientationStatus = 0;
-            break;
-          default:
-            ROS_INFO("Error: goal orientation is not working");
-        }
+        UAVOrientation.setRPY(0,0,orientationOfCPs[tour[currentPointNumber]-1]);
         goal.goal_pose.orientation.x = UAVOrientation.x();
         goal.goal_pose.orientation.y = UAVOrientation.y();
         goal.goal_pose.orientation.z = UAVOrientation.z();

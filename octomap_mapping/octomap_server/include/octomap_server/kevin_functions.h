@@ -15,6 +15,7 @@
 #include <pcl/io/pcd_io.h>
 #include <algorithm>
 
+
 void printData(octomap::OcTree tree){
   std::cout << "Number of leaf nodes: " << tree.getNumLeafNodes() << std::endl;
   std::cout << "Resolution: " << tree.getResolution() << std::endl;
@@ -111,7 +112,19 @@ void removeBelowValue(std::vector<float> vector,float lowerBound,std::vector<flo
   *outputVector = vector;
 }
 
-void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::PointCloud<pcl::PointXYZ>::Ptr freeData,std::vector<double> freeRes,float minRadius,float maxRadius,float UAVSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints,std::vector<double>* outputRes){
+float mag_product(std::vector<float> vector_a){
+  return sqrt(pow(vector_a[0],2)+pow(vector_a[1],2)+pow(vector_a[2],2));
+}
+
+float dot_product(std::vector<float> vector_a, std::vector<float> vector_b){
+  return (vector_a[0]*vector_b[0])+(vector_a[1]*vector_b[1])+(vector_a[2]*vector_b[2]);
+}
+
+float findAngle(std::vector<float> vector_a,std::vector<float> vector_b){
+  return acos(dot_product(vector_a,vector_b)/(mag_product(vector_a)*mag_product(vector_b)));
+}
+
+void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::PointCloud<pcl::PointXYZ>::Ptr freeData,std::vector<double> freeRes,float minRadius,float maxRadius,float UAVSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints,std::vector<double>* outputRes, std::vector<float>* outputOrientation){
   std::vector<float> yPosMinMax;
   std::vector<float> yNegMinMax;
   std::vector<float> xPosMinMax;
@@ -125,13 +138,13 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
     if(tempZ-(freeRes[i]/2)<POIZ && POIZ<tempZ+(freeRes[i]/2)){
       if(tempX-(freeRes[i]/2)<POIX && POIX<tempX+(freeRes[i]/2)){
         if(tempY>POIY){ // gets positive free values
-          if(tempY-(freeRes[i]/2)<POIY+maxRadius){
+          if(tempY<POIY+maxRadius){
             yPosMinMax.push_back(tempY-(freeRes[i]/2));
             yPosMinMax.push_back(tempY+(freeRes[i]/2));
           }
         }
         else if(tempY<POIY){ // gets negative free values
-          if(tempY+(freeRes[i]/2)>POIY-maxRadius){
+          if(tempY>POIY-maxRadius){
             yNegMinMax.push_back(tempY-(freeRes[i]/2));
             yNegMinMax.push_back(tempY+(freeRes[i]/2));
           }
@@ -140,13 +153,13 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
     // get max & min if free voxel is in z range, y range, & x is within maxRadius
       else if(tempY-(freeRes[i]/2)<POIY && POIY<tempY+(freeRes[i]/2)){
         if(tempX>POIX){ // gets positive free values
-          if(tempX-(freeRes[i]/2)<POIX+maxRadius){
+          if(tempX<POIX+maxRadius){
             xPosMinMax.push_back(tempX-(freeRes[i]/2));
             xPosMinMax.push_back(tempX+(freeRes[i]/2));
           }
         }
         else if(tempX<POIX){ // gets negative free values
-          if(tempX+(freeRes[i]/2)>POIX-maxRadius){
+          if(tempX>POIX-maxRadius){
             xNegMinMax.push_back(tempX-(freeRes[i]/2));
             xNegMinMax.push_back(tempX+(freeRes[i]/2));
           }
@@ -155,64 +168,87 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
     }
   }
 
+  std::vector<float> vector_a;
+  std::vector<float> vector_b;
+  vector_b = {POIX,POIY,POIZ};
   // checking if line of sight is free space
   if(yPosMinMax.size()>0){ // check yPos
     removeIfTwoValues(yPosMinMax);
     int yPosGood = 0;
-    if(yPosMinMax.size()==2 && *min_element(yPosMinMax.begin(),yPosMinMax.end())<=POIY+POIRes && *max_element(yPosMinMax.begin(),yPosMinMax.end())>POIY+minRadius){
+    if(yPosMinMax.size()==2 && *min_element(yPosMinMax.begin(),yPosMinMax.end())<POIY+POIRes && *max_element(yPosMinMax.begin(),yPosMinMax.end())>POIY+minRadius){
       yPosGood = 1;
     }
     if(yPosGood == 1){
       float yPosMax = *max_element(yPosMinMax.begin(),yPosMinMax.end());
+      if(yPosMax>POIY+maxRadius){
+        yPosMax = POIY+maxRadius;
+      }
       int numOfPointsyPos = abs((yPosMax-(POIY+minRadius))/POIRes);
       for(int j=0;j<numOfPointsyPos;j++){
+        vector_a = {POIX,POIY+minRadius+(POIRes/2)+(POIRes*j),POIZ};
         outputPoints->push_back({POIX,POIY+minRadius+(POIRes/2)+(POIRes*j),POIZ});
         outputRes->push_back(POIRes);
+        outputOrientation->push_back(findAngle(vector_a,vector_b));
       }
     }
   }
   if(yNegMinMax.size()>0){ // check yNeg
     removeIfTwoValues(yNegMinMax);
     int yNegGood = 0;
-    if(yNegMinMax.size()==2 && *min_element(yNegMinMax.begin(),yNegMinMax.end())<POIY-minRadius && *max_element(yNegMinMax.begin(),yNegMinMax.end())>=POIY-POIRes){
+    if(yNegMinMax.size()==2 && *min_element(yNegMinMax.begin(),yNegMinMax.end())<POIY-minRadius && *max_element(yNegMinMax.begin(),yNegMinMax.end())>POIY-POIRes){
       yNegGood = 1;
     }
     if(yNegGood == 1){
       float yNegMin = *min_element(yNegMinMax.begin(),yNegMinMax.end());
+      if(yNegMin<POIY-maxRadius){
+        yNegMin = POIY-maxRadius;
+      }
       int numOfPointsyNeg = abs((yNegMin-(POIY-minRadius))/POIRes);
       for(int j=0;j<numOfPointsyNeg;j++){
+        vector_a = {POIX,POIY-minRadius-(POIRes/2)-(POIRes*j),POIZ};
         outputPoints->push_back({POIX,POIY-minRadius-(POIRes/2)-(POIRes*j),POIZ});
         outputRes->push_back(POIRes);
+        outputOrientation->push_back(findAngle(vector_a,vector_b));
       }
     }
   }
   if(xPosMinMax.size()>0){ // check xPos
     removeIfTwoValues(xPosMinMax);
     int xPosGood = 0;
-    if(xPosMinMax.size()==2 && *min_element(xPosMinMax.begin(),xPosMinMax.end())<=POIX+POIRes && *max_element(xPosMinMax.begin(),xPosMinMax.end())>POIX+minRadius){
+    if(xPosMinMax.size()==2 && *min_element(xPosMinMax.begin(),xPosMinMax.end())<POIX+POIRes && *max_element(xPosMinMax.begin(),xPosMinMax.end())>POIX+minRadius){
       xPosGood = 1;
     }
     if(xPosGood==1){
       float xPosMax = *max_element(xPosMinMax.begin(),xPosMinMax.end());
+      if(xPosMax>POIX+maxRadius){
+        xPosMax = POIX+maxRadius;
+      }
       int numOfPointsxPos = abs((xPosMax-(POIX+minRadius))/POIRes);
       for(int j=0;j<numOfPointsxPos;j++){
+        vector_a = {POIX+minRadius+(POIRes/2)+(POIRes*j),POIY,POIZ};
         outputPoints->push_back({POIX+minRadius+(POIRes/2)+(POIRes*j),POIY,POIZ});
         outputRes->push_back(POIRes);
+        outputOrientation->push_back(findAngle(vector_a,vector_b));
       }
     }
   }
   if(xNegMinMax.size()>0){ // check xNeg
     removeIfTwoValues(xNegMinMax);
     int xNegGood = 0;
-    if(xNegMinMax.size()==2 && *min_element(xNegMinMax.begin(),xNegMinMax.end())<POIX-minRadius && *max_element(xNegMinMax.begin(),xNegMinMax.end())>=POIX-POIRes){
+    if(xNegMinMax.size()==2 && *min_element(xNegMinMax.begin(),xNegMinMax.end())<POIX-minRadius && *max_element(xNegMinMax.begin(),xNegMinMax.end())>POIX-POIRes){
       xNegGood = 1;
     }
     if(xNegGood==1){
       float xNegMin = *min_element(xNegMinMax.begin(),xNegMinMax.end());
+      if(xNegMin<POIX-maxRadius){
+        xNegMin = POIX-maxRadius;
+      }
       int numOfPointsxNeg = abs((xNegMin-(POIX-minRadius))/POIRes);
       for(int j=0;j<numOfPointsxNeg;j++){
+        vector_a = {POIX-minRadius-(POIRes/2)-(POIRes*j),POIY,POIZ};
         outputPoints->push_back({POIX-minRadius-(POIRes/2)-(POIRes*j),POIY,POIZ});
         outputRes->push_back(POIRes);
+        outputOrientation->push_back(findAngle(vector_a,vector_b));
       }
     }
   }
