@@ -80,19 +80,7 @@ void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 	// if (pointer != NULL) {
 	// 	std::cout << "Point is in Map!\n";
 	// } else {
-	// 	std::cout << "Point is NOT in Map!\n";
-	// }
-
-	std::cout << "Reading the ground truth....\n";
-
-	std::cout << "Number of Points in the ground truth: 2198 " << "TP: 367" << "FN: 1831\n";
-
-	std::cout << "Number of Points in the hypothesis not in ground truth (FP): 0\n"; 
-
-
-
-
-
+	// 	std::cout << "Point is NOT in Map!\n"
 
 }
 
