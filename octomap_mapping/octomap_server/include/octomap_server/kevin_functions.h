@@ -14,7 +14,7 @@
 #include <octomap/ColorOcTree.h>
 #include <pcl/io/pcd_io.h>
 #include <algorithm>
-
+#include <math.h>
 
 void printData(octomap::OcTree tree){
   std::cout << "Number of leaf nodes: " << tree.getNumLeafNodes() << std::endl;
@@ -112,19 +112,32 @@ void removeBelowValue(std::vector<float> vector,float lowerBound,std::vector<flo
   *outputVector = vector;
 }
 
-float mag_product(std::vector<float> vector_a){
+//Find the magnitude of the Vector
+float mag_product3(std::vector<float> vector_a){
   return sqrt(pow(vector_a[0],2)+pow(vector_a[1],2)+pow(vector_a[2],2));
 }
 
-float dot_product(std::vector<float> vector_a, std::vector<float> vector_b){
-  return (vector_a[0]*vector_b[0])+(vector_a[1]*vector_b[1])+(vector_a[2]*vector_b[2]);
+//Find Dot/ Scalar product
+float dot_product(std::vector<float> lhs, std::vector<float> rhs){
+  return std::inner_product(lhs.begin(), lhs.end(), rhs.begin(), 0);
 }
 
-float findAngle(std::vector<float> vector_a,std::vector<float> vector_b){
-  return acos(dot_product(vector_a,vector_b)/(mag_product(vector_a)*mag_product(vector_b)));
+// TODO: This is the wrong return vector. (findAngle)
+std::vector<float> rollPitchYaw(std::vector<float> from,std::vector<float> to){
+  float dx = from[0]-to[0];
+  float dy = from[1]-to[1];
+  float dz = from[2]-to[2];
+  float roll = 0;
+  float pitch = -atan2(dy,sqrt(pow(dx,2)+pow(dz,2)));
+  float yaw = atan2(dz,dx)-(3.13159/2);
+  std::vector<float> outputData;
+  outputData = {roll,pitch,yaw};
+  return outputData;
 }
 
-void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::PointCloud<pcl::PointXYZ>::Ptr freeData,std::vector<double> freeRes,float minRadius,float maxRadius,float UAVSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints,std::vector<double>* outputRes, std::vector<float>* outputOrientation){
+// TODO: Adding the outputPoints and other outputs are not uniform. Need to figure out why they're not the same size
+// Also just check as to if they're the right res and orientation.
+void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::PointCloud<pcl::PointXYZ>::Ptr freeData,std::vector<double> freeRes,float minRadius,float maxRadius,float UAVSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints,std::vector<double>* outputRes, std::vector<float>* outputOrientationYaw){
   std::vector<float> yPosMinMax;
   std::vector<float> yNegMinMax;
   std::vector<float> xPosMinMax;
@@ -170,6 +183,7 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
 
   std::vector<float> vector_a;
   std::vector<float> vector_b;
+  std::vector<float> tempOrientation;
   vector_b = {POIX,POIY,POIZ};
   // checking if line of sight is free space
   if(yPosMinMax.size()>0){ // check yPos
@@ -188,7 +202,8 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
         vector_a = {POIX,POIY+minRadius+(POIRes/2)+(POIRes*j),POIZ};
         outputPoints->push_back({POIX,POIY+minRadius+(POIRes/2)+(POIRes*j),POIZ});
         outputRes->push_back(POIRes);
-        outputOrientation->push_back(findAngle(vector_a,vector_b));
+        tempOrientation = rollPitchYaw(vector_a,vector_b);
+        outputOrientationYaw->push_back(tempOrientation[2]);
       }
     }
   }
@@ -208,7 +223,8 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
         vector_a = {POIX,POIY-minRadius-(POIRes/2)-(POIRes*j),POIZ};
         outputPoints->push_back({POIX,POIY-minRadius-(POIRes/2)-(POIRes*j),POIZ});
         outputRes->push_back(POIRes);
-        outputOrientation->push_back(findAngle(vector_a,vector_b));
+        tempOrientation = rollPitchYaw(vector_a,vector_b);
+        outputOrientationYaw->push_back(tempOrientation[2]);
       }
     }
   }
@@ -228,7 +244,8 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
         vector_a = {POIX+minRadius+(POIRes/2)+(POIRes*j),POIY,POIZ};
         outputPoints->push_back({POIX+minRadius+(POIRes/2)+(POIRes*j),POIY,POIZ});
         outputRes->push_back(POIRes);
-        outputOrientation->push_back(findAngle(vector_a,vector_b));
+        tempOrientation = rollPitchYaw(vector_a,vector_b);
+        outputOrientationYaw->push_back(tempOrientation[2]);
       }
     }
   }
@@ -248,7 +265,8 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
         vector_a = {POIX-minRadius-(POIRes/2)-(POIRes*j),POIY,POIZ};
         outputPoints->push_back({POIX-minRadius-(POIRes/2)-(POIRes*j),POIY,POIZ});
         outputRes->push_back(POIRes);
-        outputOrientation->push_back(findAngle(vector_a,vector_b));
+        tempOrientation = rollPitchYaw(vector_a,vector_b);
+        outputOrientationYaw->push_back(tempOrientation[2]);
       }
     }
   }

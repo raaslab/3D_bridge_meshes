@@ -388,13 +388,14 @@ int main(int argc, char** argv){
       if(tempPoints->size()>0){
         viewPoints->push_back(cloudOccTrimmed->points[j]);
         numOfCluster++;
+        myfile1<<"size (CP,Res,ori): "<<"("<<clusteredPoints->size()<<","<<tempRes.size()<<","<<tempOrientation.size()<<")"<<std::endl;
         myfile1<<"clustered points: ";
       }
       for(int i = 0; i<tempPoints->size();i++){
         clusteredPoints->push_back(tempPoints->points[i]);
         point2ClusterMapping.push_back(numOfCluster);
         orientationOfCPs.push_back(tempOrientation[i]);
-        myfile1<<tempPoints->points[i]<<" "<<tempRes[i]<<", ";
+        myfile1<<tempPoints->points[i]<<" "<<tempRes[i]<<" "<<tempOrientation[i]<<", ";
       }
       myfile1<<std::endl;
     }
@@ -499,6 +500,7 @@ int main(int argc, char** argv){
         goal.goal_pose.orientation.y = UAVOrientation.y();
         goal.goal_pose.orientation.z = UAVOrientation.z();
         goal.goal_pose.orientation.w = UAVOrientation.w();
+        ROS_INFO("Goal orientation: (%lf,%lf,%lf,%lf)",goal.goal_pose.orientation.x,goal.goal_pose.orientation.y,goal.goal_pose.orientation.z,goal.goal_pose.orientation.w);
 
         // ROS_INFO("Sending goal");
         ac.sendGoal(goal);
