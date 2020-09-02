@@ -8,7 +8,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <pcl/kdtree/kdtree_flann.h>
-
+#include <octomap/octomap.h>
+#include <octomap_server/OctomapServer.h>
+#include <octomap/OcTree.h>
 // typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 // ros::Publisher occArrayTrimmed_pub;
 float thresholdOcc = 1.0;
@@ -21,7 +23,7 @@ visualization_msgs::MarkerArray zPruned;
 
 uint32_t shape = visualization_msgs::Marker::CUBE;
 float trimmedHeight = 3;
-int initstraySizeThresh = 2;
+int initstraySizeThresh = 3;
 
 void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 	octomap::AbstractOcTree* absTree = octomap_msgs::fullMsgToMap(input);
@@ -82,10 +84,10 @@ void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 			
 			} else {
 				ROS_INFO("PRUNED stray squares: %zu", pointIdxNKNSearch.size());
-				zPrunedMarkers.pose.position.x = cloudOccFull->points[i].x; zPrunedMarkers.pose.position.y = cloudOccFull->points[i].y; zPrunedMarkers.pose.position.z = cloudOccFull->points[i].z;
-				zPrunedMarkers.id = i;
-				zPrunedMarkers.scale.x = markerSize; zPrunedMarkers.scale.y = markerSize; zPrunedMarkers.scale.z = markerSize;
-				zPruned.markers.push_back(zPrunedMarkers);
+				// zPrunedMarkers.pose.position.x = cloudOccFull->points[i].x; zPrunedMarkers.pose.position.y = cloudOccFull->points[i].y; zPrunedMarkers.pose.position.z = cloudOccFull->points[i].z;
+				// zPrunedMarkers.id = i;
+				// zPrunedMarkers.scale.x = markerSize; zPrunedMarkers.scale.y = markerSize; zPrunedMarkers.scale.z = markerSize;
+				// zPruned.markers.push_back(zPrunedMarkers);
 			}
 		}
 	}

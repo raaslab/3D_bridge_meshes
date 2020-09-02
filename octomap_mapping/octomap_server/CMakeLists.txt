@@ -43,11 +43,11 @@ set(LINK_LIBS
   ${catkin_LIBRARIES}
 )
 
-add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerTrimmed.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
+add_library(${PROJECT_NAME} src/OctomapServer.cpp src/OctomapServerTrimmed.cpp src/OctomapServerMetric.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
-add_library(${PROJECT_NAME}_color src/OctomapServer.cpp src/OctomapServerTrimmed.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
+add_library(${PROJECT_NAME}_color src/OctomapServer.cpp src/OctomapServerTrimmed.cpp src/OctomapServerMetric.cpp src/OctomapServerMultilayer.cpp src/TrackingOctomapServer.cpp)
 target_link_libraries(${PROJECT_NAME}_color ${LINK_LIBS})
 add_dependencies(${PROJECT_NAME}_color ${PROJECT_NAME}_gencfg)
 target_compile_definitions(${PROJECT_NAME}_color PUBLIC COLOR_OCTOMAP_SERVER)
@@ -57,6 +57,10 @@ target_link_libraries(octomap_server_node ${PROJECT_NAME} ${LINK_LIBS})
 
 add_executable(octomap_server_node_trimmed src/octomap_server_node_trimmed.cpp)
 target_link_libraries(octomap_server_node_trimmed ${PROJECT_NAME} ${LINK_LIBS})
+
+add_executable(octomap_server_node_metrics src/octomap_server_node_metrics.cpp)
+target_link_libraries(octomap_server_node_metrics ${PROJECT_NAME} ${LINK_LIBS})
+
 
 add_executable(octomap_color_server_node src/octomap_server_node.cpp)
 target_link_libraries(octomap_color_server_node ${PROJECT_NAME}_color ${LINK_LIBS})
@@ -85,6 +89,9 @@ target_link_libraries(kevin ${PROJECT_NAME} ${LINK_LIBS})
 
 add_executable(zFilter src/zFilter.cpp)
 target_link_libraries(zFilter ${PROJECT_NAME} ${LINK_LIBS})
+
+add_executable(generateGT src/generateGT.cpp)
+target_link_libraries(generateGT ${PROJECT_NAME} ${LINK_LIBS})
 
 add_executable(sandBox src/sandBox.cpp)
 target_link_libraries(sandBox ${PROJECT_NAME} ${LINK_LIBS})
