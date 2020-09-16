@@ -15,6 +15,7 @@
 #include <pcl/io/pcd_io.h>
 #include <algorithm>
 #include <math.h>
+#include <numeric>
 
 void printData(octomap::OcTree tree){
   std::cout << "Number of leaf nodes: " << tree.getNumLeafNodes() << std::endl;
@@ -122,7 +123,6 @@ float dot_product(std::vector<float> lhs, std::vector<float> rhs){
   return std::inner_product(lhs.begin(), lhs.end(), rhs.begin(), 0);
 }
 
-// TODO: This is the wrong return vector. (findAngle)
 std::vector<float> rollPitchYaw(std::vector<float> from,std::vector<float> to){
   float dx = from[0]-to[0];
   float dy = from[1]-to[1];

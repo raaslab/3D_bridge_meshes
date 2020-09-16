@@ -37,7 +37,6 @@
 #include <pcl/filters/passthrough.h>
 #include <std_msgs/Float64MultiArray.h>
 
-
 #define MAX_TOUR_SIZE 25
 
 
@@ -118,14 +117,24 @@ void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
 
 int main(int argc, char** argv){
   std::ofstream myfile;
-  myfile.open("/home/user01/testRunsBI/test1Info.txt");
+  myfile.open("/home/klyu/bridgeInspection/testInfo.txt");
   std::ofstream myfile1;
-  myfile1.open("/home/user01/testRunsBI/test1Clusters.txt");
+  myfile1.open("/home/klyu/bridgeInspection/testClusters.txt");
+  std::ofstream myfileT;
+  myfileT.open("/home/klyu/bridgeInspection/timeVSTrimmedOcc.csv");
+  std::ofstream myfileDA;
+  myfileDA.open("/home/klyu/bridgeInspection/timeVSDistanceActual.csv");
+  std::ofstream myfileDE;
+  myfileDE.open("/home/klyu/bridgeInspection/timeVSDistanceExpected.csv");
+
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
   actionlib::SimpleActionClient<hector_moveit_navigation::NavigationAction> ac("hector_navigator", true);
   ros::NodeHandle n;
   ros::Rate r(0.05); // less than 1 is slower
+  ros::Rate distanceSleep(10);
+  ros::Time beginT = ros::Time::now();
+  ros::Time updateT;
   ros::Publisher occArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayTrimmed_pub",1,true);
   ros::Publisher freeArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/freeArrayTrimmed_pub",1,true);
   ros::Publisher occArrayFull_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayFull_pub",1,true);
@@ -144,7 +153,6 @@ int main(int argc, char** argv){
   ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
   ros::Subscriber zFilteredSize_sub = n.subscribe("/zFilteredSize", 1, zFilteredSize_cb);
 
-
 // initializing arrays
   pcl::PointXYZ searchPoint;
   visualization_msgs::MarkerArray occArrayTrimmed;
@@ -158,7 +166,7 @@ int main(int argc, char** argv){
   uint32_t shape = visualization_msgs::Marker::CUBE;
   int loopNumber = 0;
   float minRadius = 2;
-  float maxRadius = 6;
+  float maxRadius = 5;
   float thresholdOcc = 1.0;
   float thresholdFree = 0.0;
   float sizeOfUAV = 1.0;
@@ -213,7 +221,7 @@ int main(int argc, char** argv){
   goal.goal_pose.orientation.z = 0;
   goal.goal_pose.orientation.w = 1;
   ac.sendGoal(goal);
-  
+
 // checking takeoff
   bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
   if(finished_before_timeout)
@@ -262,7 +270,7 @@ int main(int argc, char** argv){
     poll_rate.sleep();
   while(goal_distance_publisher.getNumSubscribers() == 0)
     poll_rate.sleep();
-
+  ROS_INFO("Finished");
 // problem is that GLNS will crash if empty set
   while (ros::ok()){
     ros::spinOnce();
@@ -319,6 +327,9 @@ int main(int argc, char** argv){
       }
       id4Markers = id4Markers + 1;
     }
+    updateT = ros::Time::now();
+    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << std::endl;
+
 // creating point clouds for free, occupied, and unknown voxels for full point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudFreeFull (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOccFull (new pcl::PointCloud<pcl::PointXYZ>);
@@ -345,7 +356,7 @@ int main(int argc, char** argv){
         countUnknownFull = countUnknownFull + 1;
       }
     }
-    
+
     ROS_INFO("\nRemoving previously seen voxels");
     std::cout<<"trimmed point cloud size: " << tempCloudOccTrimmed->size() << std::endl;
     std::cout<<"running visited voxel size: " << runningVisitedVoxels->size() << std::endl;
@@ -388,7 +399,7 @@ int main(int argc, char** argv){
       if(tempPoints->size()>0){
         viewPoints->push_back(cloudOccTrimmed->points[j]);
         numOfCluster++;
-        myfile1<<"size (CP,Res,ori): "<<"("<<clusteredPoints->size()<<","<<tempRes.size()<<","<<tempOrientation.size()<<")"<<std::endl;
+        // myfile1<<"size (CP,Res,ori): "<<"("<<clusteredPoints->size()<<","<<tempRes.size()<<","<<tempOrientation.size()<<")"<<std::endl;
         myfile1<<"clustered points: ";
       }
       for(int i = 0; i<tempPoints->size();i++){
@@ -400,7 +411,7 @@ int main(int argc, char** argv){
       myfile1<<std::endl;
     }
     std::cout << "cloud free size: " << cloudFreeFull->size() << std::endl;
-        
+
     if(numOfCluster<2){ // the structure has been covered
       ROS_INFO("No clusters");
       structureCovered = 1;
@@ -412,7 +423,7 @@ int main(int argc, char** argv){
       pcl::toPCLPointCloud2(*clusteredPoints, pcl_pc);
       sensor_msgs::PointCloud2 usablePC2;
       pcl_conversions::fromPCL(pcl_pc, usablePC2);
-      
+
       gtsp_data.points = usablePC2;
       gtsp_data.numClusters = numOfCluster;
       gtsp_data.pointClusterMapping = point2ClusterMapping;
@@ -490,6 +501,13 @@ int main(int argc, char** argv){
         goal.goal_pose.position.x = clusteredPoints->points[tour[currentPointNumber]-1].x;
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
         goal.goal_pose.position.z = clusteredPoints->points[tour[currentPointNumber]-1].z;
+        goal_distance_publisher.publish(goal.goal_pose.position);
+        while(!length_ready){
+          ros::spinOnce();
+          distanceSleep.sleep();
+        }
+        float tempDistance = moveit_distance;
+        length_ready = false;
         // ROS_INFO("\nCurrent index in tour: %d\nCurrent point in tour: %d\nMoving to point: (%f,%f,%f)",currentPointNumber,tour[currentPointNumber],goal.goal_pose.position.x,goal.goal_pose.position.y,goal.goal_pose.position.z);
         std::cout<<"Current index in tour: "<<currentPointNumber<<std::endl;
         std::cout<<"Current point in tour: "<<tour[currentPointNumber]<<std::endl;
@@ -512,6 +530,11 @@ int main(int argc, char** argv){
           pcl::PointXYZ tempPoint(viewPoints->at(clusterNumber-1).x,viewPoints->at(clusterNumber-1).y,viewPoints->at(clusterNumber-1).z);
           runningVisitedVoxels->push_back(tempPoint);
           ROS_INFO("Action finished: %s", state.toString().c_str());
+          std::cout<<"moveit_distance: "<<moveit_distance<<std::endl;
+          std::cout<<"tempDistance: " <<tempDistance<<std::endl;
+          updateT = ros::Time::now();
+          myfileDA << updateT-beginT << "," << moveit_distance << std::endl;
+          myfileDE << updateT-beginT << "," << sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))<< std::endl;
         }
         else{
           ac.cancelAllGoals();
@@ -551,5 +574,8 @@ int main(int argc, char** argv){
   ROS_INFO("Total run time: %d seconds",elapsedTotalTime.sec);
   myfile.close();
   myfile1.close();
+  myfileT.close();
+  myfileDA.close();
+  myfileDE.close();
   return 0;
 }
