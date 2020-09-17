@@ -273,6 +273,19 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
   return;
 }
 
+void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointCloud<pcl::PointXYZ>::Ptr occupied,float bufferSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints){
+  float distBetweenPoints;
+  for(int i=0;i<points->size();i++){
+    for(int j=0;j<occupied->size();j++){
+      distBetweenPoints = sqrt(pow(points->at(i).x-occupied->at(j).x,2)+pow(points->at(i).y-occupied->at(j).y,2)+pow(points->at(i).z-occupied->at(j).z,2));
+      if(distBetweenPoints>bufferSize){
+        outputPoints->push_back(points->at(i));
+      }
+    }
+  }
+}
+
+
 void testCode(std::vector<double>* outputRes){
   outputRes->push_back(1);
   outputRes->push_back(5);

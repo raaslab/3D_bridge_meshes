@@ -380,6 +380,7 @@ int main(int argc, char** argv){
 
     float tempX1; float tempY1; float tempZ1; float tempX2; float tempY2; float tempZ2;
     pcl::PointCloud<pcl::PointXYZ>::Ptr tempPoints (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr tempPoints1 (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr clusteredPoints (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr viewPoints (new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<int> point2ClusterMapping;
@@ -393,7 +394,9 @@ int main(int argc, char** argv){
       tempY1 = cloudOccTrimmed->points[j].y;
       tempZ1 = cloudOccTrimmed->points[j].z;
       tempPoints->clear();
-      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints,&tempRes,&tempOrientation);
+      tempPoints1->clear();
+      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints1,&tempRes,&tempOrientation);
+      removeVoxelsTooClose(tempPoints1,cloudOccFull,sizeOfUAV+(zFilteredSize.at(j)/2),tempPoints);
         myfile1<<j<<". view point: ";
         myfile1<<cloudOccTrimmed->points[j]<<std::endl;
       if(tempPoints->size()>0){
