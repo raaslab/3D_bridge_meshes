@@ -135,7 +135,6 @@ std::vector<float> rollPitchYaw(std::vector<float> from,std::vector<float> to){
   return outputData;
 }
 
-// TODO: Adding the outputPoints and other outputs are not uniform. Need to figure out why they're not the same size
 // Also just check as to if they're the right res and orientation.
 void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::PointCloud<pcl::PointXYZ>::Ptr freeData,std::vector<double> freeRes,float minRadius,float maxRadius,float UAVSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints,std::vector<double>* outputRes, std::vector<float>* outputOrientationYaw){
   std::vector<float> yPosMinMax;
@@ -275,12 +274,17 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
 
 void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointCloud<pcl::PointXYZ>::Ptr occupied,float bufferSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints){
   float distBetweenPoints;
+  int toClose = 0;
   for(int i=0;i<points->size();i++){
+    toClose = 0;
     for(int j=0;j<occupied->size();j++){
       distBetweenPoints = sqrt(pow(points->at(i).x-occupied->at(j).x,2)+pow(points->at(i).y-occupied->at(j).y,2)+pow(points->at(i).z-occupied->at(j).z,2));
-      if(distBetweenPoints>bufferSize){
-        outputPoints->push_back(points->at(i));
+      if(distBetweenPoints<bufferSize){
+        toClose = 1;
       }
+    }
+    if(toClose==0){
+      outputPoints->push_back({points->at(i).x,points->at(i).y,points->at(i).z});
     }
   }
 }
