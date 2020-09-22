@@ -556,7 +556,9 @@ int main(int argc, char** argv){
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
+        ROS_INFO("Last line of goal point while loop.");
       }
+      ROS_INFO("If structure hasn't been covered yet.");
     }
 
     std::cout<<std::endl;
