@@ -51,6 +51,7 @@ float xData=0.0;
 float yData=0.0;
 float zData=0.0;
 int positionCount = 0;
+flaot checkDistance = 5; // the allowed difference in the expected distance and actual distance
 std::vector<int> tour;
 double moveit_distance = -1;
 bool tour_ready = false;
@@ -528,6 +529,9 @@ int main(int argc, char** argv){
         finished_before_timeout = false;
         finished_before_timeout = ac.waitForResult(ros::Duration(30));
         if(finished_before_timeout){ // waiting for 30 seconds to reach goal before sending next point
+          if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
+            break;
+          }
           actionlib::SimpleClientGoalState state = ac.getState();
           int clusterNumber = point2ClusterMapping.at(tour[currentPointNumber]-1);
           pcl::PointXYZ tempPoint(viewPoints->at(clusterNumber-1).x,viewPoints->at(clusterNumber-1).y,viewPoints->at(clusterNumber-1).z);
