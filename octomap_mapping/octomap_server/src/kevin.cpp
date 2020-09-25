@@ -51,7 +51,7 @@ float xData=0.0;
 float yData=0.0;
 float zData=0.0;
 int positionCount = 0;
-flaot checkDistance = 5; // the allowed difference in the expected distance and actual distance
+float checkDistance = 5; // the allowed difference in the expected distance and actual distance
 std::vector<int> tour;
 double moveit_distance = -1;
 bool tour_ready = false;
@@ -530,6 +530,8 @@ int main(int argc, char** argv){
         finished_before_timeout = ac.waitForResult(ros::Duration(30));
         if(finished_before_timeout){ // waiting for 30 seconds to reach goal before sending next point
           if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
+            ROS_INFO("moveit distance was too different from euclidean differance.");
+            ROS_INFO("breaking out");
             break;
           }
           actionlib::SimpleClientGoalState state = ac.getState();
