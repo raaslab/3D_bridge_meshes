@@ -60,6 +60,7 @@ geometry_msgs::Pose currentPose;
 pcl::PointCloud<pcl::PointXYZ>::Ptr runningVisitedVoxels (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
 std::vector<double> tempzFilteredSize;
+std::vector<geometry_msgs/points> visitedPointsList;
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
@@ -115,6 +116,10 @@ void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
   }
 }
 
+// void visitedPointList_cb(const std::vector<geometry_msgs/points>& msg){
+//   visitedPointsList = msg;
+// }
+
 
 int main(int argc, char** argv){
   std::ofstream myfile;
@@ -145,6 +150,7 @@ int main(int argc, char** argv){
   ros::Publisher point_cloud_publisher = n.advertise<sensor_msgs::PointCloud2>("/gtsp_point_cloud", 1);
   ros::Publisher goal_distance_publisher = n.advertise<geometry_msgs::Point>("/compute_path/point", 1);
   ros::Publisher gtspData_pub = n.advertise<gtsp::GTSPData>("/gtsp_data", 1);
+  ros::Publisher resetFlag_pub = n.advertise<bool>("/resetFlag",1); //TODO: CHECK IF THIS WORKS
 
   ros::Subscriber fullTree_sub = n.subscribe("/octomap_full",1,full_cb);
   ros::Subscriber trimmedTree_sub = n.subscribe("/octomap_full_trimmed",1,trimmed_cb);
@@ -153,6 +159,7 @@ int main(int argc, char** argv){
   ros::Subscriber distance_sub = n.subscribe("/compute_path/length", 1, lengthCallback);
   ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
   ros::Subscriber zFilteredSize_sub = n.subscribe("/zFilteredSize", 1, zFilteredSize_cb);
+  // ros::Subscriber visitedPointList_sub = n.subscribe("/visited_point_list", 1, visitedPointList_cb);
 
 // initializing arrays
   pcl::PointXYZ searchPoint;
@@ -501,6 +508,7 @@ int main(int argc, char** argv){
 
       ROS_INFO("\nStart index in tour: %d\nStart point in tour: %d",currentPointNumber,tour[currentPointNumber]);
       while(elapsed.sec<60 && !tspDone){
+        resetFlag_pub.publish(false);
         // goal point for moveit
         goal.goal_pose.position.x = clusteredPoints->points[tour[currentPointNumber]-1].x;
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
@@ -511,8 +519,13 @@ int main(int argc, char** argv){
           distanceSleep.sleep();
         }
         float tempDistance = moveit_distance;
+        if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
+          resetFlag_pub.publish(true);
+          ROS_INFO("moveit distance was too different from euclidean differance.");
+          ROS_INFO("breaking out");
+          break;
+        }
         length_ready = false;
-        // ROS_INFO("\nCurrent index in tour: %d\nCurrent point in tour: %d\nMoving to point: (%f,%f,%f)",currentPointNumber,tour[currentPointNumber],goal.goal_pose.position.x,goal.goal_pose.position.y,goal.goal_pose.position.z);
         std::cout<<"Current index in tour: "<<currentPointNumber<<std::endl;
         std::cout<<"Current point in tour: "<<tour[currentPointNumber]<<std::endl;
         std::cout<<"Moving to point: ("<<goal.goal_pose.position.x<<","<<goal.goal_pose.position.y<<","<<goal.goal_pose.position.z<<")"<<std::endl;
@@ -529,11 +542,6 @@ int main(int argc, char** argv){
         finished_before_timeout = false;
         finished_before_timeout = ac.waitForResult(ros::Duration(30));
         if(finished_before_timeout){ // waiting for 30 seconds to reach goal before sending next point
-          if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
-            ROS_INFO("moveit distance was too different from euclidean differance.");
-            ROS_INFO("breaking out");
-            break;
-          }
           actionlib::SimpleClientGoalState state = ac.getState();
           int clusterNumber = point2ClusterMapping.at(tour[currentPointNumber]-1);
           pcl::PointXYZ tempPoint(viewPoints->at(clusterNumber-1).x,viewPoints->at(clusterNumber-1).y,viewPoints->at(clusterNumber-1).z);
@@ -562,9 +570,8 @@ int main(int argc, char** argv){
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
-        ROS_INFO("Last line of goal point while loop.");
+        resetFlag_pub.publish(true);
       }
-      ROS_INFO("If structure hasn't been covered yet.");
     }
 
     std::cout<<std::endl;
