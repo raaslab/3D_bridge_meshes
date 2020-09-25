@@ -36,6 +36,7 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/passthrough.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Float64.h>
 
 #define MAX_TOUR_SIZE 25
 
@@ -60,7 +61,8 @@ geometry_msgs::Pose currentPose;
 pcl::PointCloud<pcl::PointXYZ>::Ptr runningVisitedVoxels (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
 std::vector<double> tempzFilteredSize;
-std::vector<geometry_msgs/points> visitedPointsList;
+std_msgs::Float64 resetFlag_msg;
+// sensor_msgs::PointCloud2 visitedPointsList;
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
@@ -150,7 +152,7 @@ int main(int argc, char** argv){
   ros::Publisher point_cloud_publisher = n.advertise<sensor_msgs::PointCloud2>("/gtsp_point_cloud", 1);
   ros::Publisher goal_distance_publisher = n.advertise<geometry_msgs::Point>("/compute_path/point", 1);
   ros::Publisher gtspData_pub = n.advertise<gtsp::GTSPData>("/gtsp_data", 1);
-  ros::Publisher resetFlag_pub = n.advertise<bool>("/resetFlag",1); //TODO: CHECK IF THIS WORKS
+  ros::Publisher resetFlag_pub = n.advertise<std_msgs::Float64>("/resetFlag",1);
 
   ros::Subscriber fullTree_sub = n.subscribe("/octomap_full",1,full_cb);
   ros::Subscriber trimmedTree_sub = n.subscribe("/octomap_full_trimmed",1,trimmed_cb);
@@ -508,7 +510,8 @@ int main(int argc, char** argv){
 
       ROS_INFO("\nStart index in tour: %d\nStart point in tour: %d",currentPointNumber,tour[currentPointNumber]);
       while(elapsed.sec<60 && !tspDone){
-        resetFlag_pub.publish(false);
+        resetFlag_msg.data=0;
+        resetFlag_pub.publish(resetFlag_msg);
         // goal point for moveit
         goal.goal_pose.position.x = clusteredPoints->points[tour[currentPointNumber]-1].x;
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
@@ -520,7 +523,8 @@ int main(int argc, char** argv){
         }
         float tempDistance = moveit_distance;
         if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
-          resetFlag_pub.publish(true);
+          resetFlag_msg.data=1;
+          resetFlag_pub.publish(resetFlag_msg);
           ROS_INFO("moveit distance was too different from euclidean differance.");
           ROS_INFO("breaking out");
           break;
@@ -570,7 +574,8 @@ int main(int argc, char** argv){
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
-        resetFlag_pub.publish(true);
+        resetFlag_msg.data=1;
+        resetFlag_pub.publish(resetFlag_msg);
       }
     }
 
