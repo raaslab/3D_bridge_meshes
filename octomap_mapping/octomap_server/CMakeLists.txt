@@ -92,6 +92,9 @@ target_link_libraries(sandBox ${PROJECT_NAME} ${LINK_LIBS})
 add_executable(markers src/markers.cpp)
 target_link_libraries(markers ${catkin_LIBRARIES})
 
+add_executable(visitedPoints_Publisher src/visitedPoints_Publisher.cpp)
+target_link_libraries(visitedPoints_Publisher ${PROJECT_NAME} ${LINK_LIBS})
+
 # install targets:
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_color
   octomap_server_node
@@ -118,7 +121,7 @@ install(DIRECTORY launch/
   PATTERN ".svn" EXCLUDE
 )
 
-install(FILES 
+install(FILES
   nodelet_plugins.xml
   color_nodelet_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
