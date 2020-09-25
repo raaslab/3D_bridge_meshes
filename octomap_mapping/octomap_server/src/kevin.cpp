@@ -150,7 +150,7 @@ int main(int argc, char** argv){
   ros::Publisher point_cloud_publisher = n.advertise<sensor_msgs::PointCloud2>("/gtsp_point_cloud", 1);
   ros::Publisher goal_distance_publisher = n.advertise<geometry_msgs::Point>("/compute_path/point", 1);
   ros::Publisher gtspData_pub = n.advertise<gtsp::GTSPData>("/gtsp_data", 1);
-  ros::Publisher resetFlag_pub = n.advertise<bool>("/resetFlag",1);
+  ros::Publisher resetFlag_pub = n.advertise<bool>("/resetFlag",1); //TODO: CHECK IF THIS WORKS
 
   ros::Subscriber fullTree_sub = n.subscribe("/octomap_full",1,full_cb);
   ros::Subscriber trimmedTree_sub = n.subscribe("/octomap_full_trimmed",1,trimmed_cb);
@@ -508,7 +508,7 @@ int main(int argc, char** argv){
 
       ROS_INFO("\nStart index in tour: %d\nStart point in tour: %d",currentPointNumber,tour[currentPointNumber]);
       while(elapsed.sec<60 && !tspDone){
-        resetFlag_pub.publish(0);
+        resetFlag_pub.publish(false);
         // goal point for moveit
         goal.goal_pose.position.x = clusteredPoints->points[tour[currentPointNumber]-1].x;
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
@@ -520,7 +520,7 @@ int main(int argc, char** argv){
         }
         float tempDistance = moveit_distance;
         if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
-          resetFlag_pub.publish(1);
+          resetFlag_pub.publish(true);
           break;
         }
         length_ready = false;
@@ -568,7 +568,7 @@ int main(int argc, char** argv){
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
-        resetFlag_pub.publish(1);
+        resetFlag_pub.publish(true);
       }
     }
 
