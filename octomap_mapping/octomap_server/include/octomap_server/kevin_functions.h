@@ -67,11 +67,16 @@ int checkIfFloatsAreTheSame(float num1, float num2, int precision){
   int output;
   if(new1 == new2){
     output = 1;
-  }
-  else{
+  } else{
     output = 0;
   }
   return output;
+}
+
+int checkIfPointIsInVoxel(pcl::PointXYZ POI, pcl::PointXYZ voxelPoint, float POIRes){ //TODO: check this
+  if(same){
+    return 1;
+  } else return 0;
 }
 
 void removeIfTwoValues(std::vector<float> &v){
@@ -288,9 +293,6 @@ void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointC
     }
   }
 }
-
-
-
 
 void testCode(std::vector<double>* outputRes){
   outputRes->push_back(1);

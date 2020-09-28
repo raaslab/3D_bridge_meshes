@@ -580,7 +580,16 @@ int main(int argc, char** argv){
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
         for(int i=0;i<visitedPointsList->size();i++){
-
+          for(int j=0;j<clusterdPoints->size();j++){
+            if(clusteredPoints->at(j) == visitedPointsList->at(i)){
+              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping->at(j)-1));
+              break;
+            }
+            // viewPoints // cluster:(x,y,z)
+            // clusteredPoints // 0:(x,y,z); 1:(x,y,z);... pointID:(x,y,z)
+            // point2ClusterMapping // 0:1;1:1;2:2;3:2;... pointID:cluster
+            tempRes; // pointID:point resolution
+          }
           // std::cout<<visitedPointsList->at(i)<<std::endl;
         }
         // TODO: add the visitedPointsList to the runningVisitedVoxels
