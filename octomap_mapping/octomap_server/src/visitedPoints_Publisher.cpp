@@ -31,17 +31,21 @@ int main(int argc, char **argv){
   ros::Subscriber uavIMU_sub = n.subscribe("/ground_truth_to_tf/pose",1,imu_cb);
   ros::Rate loop_rate(1);
   visitedPointsList->header.frame_id = "/world";
+  ROS_INFO("visitedPoints_publisher");
   int count = 0;
   while (ros::ok()){
     ros::spinOnce();
+    ROS_INFO("while loop: %d", count);
     visitedPointsList->width = count; visitedPointsList->height = 1; visitedPointsList->points.resize (visitedPointsList->width * visitedPointsList->height);
     if(!rF){
+      ROS_INFO("If");
       visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z; //TODO:check this
       if(visitedPointsList->size()){ //TODO: CHECK THIS
         pointList_pub.publish(visitedPointsList);
       }
     }
     else{
+      ROS_INFO("Else");
       visitedPointsList->clear(); //TODO:check this
       // visitedPointsList.clear(); //TODO: CHECK IF THIS WORKS
     }
