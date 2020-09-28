@@ -283,7 +283,7 @@ void findIfVoxelCanBeSeen(float POIX,float POIY,float POIZ,float POIRes,pcl::Poi
   return;
 }
 
-void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointCloud<pcl::PointXYZ>::Ptr occupied,float bufferSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints){
+void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointCloud<pcl::PointXYZ>::Ptr occupied,float bufferSize,pcl::PointCloud<pcl::PointXYZ>::Ptr outputPoints,std::vector<double>* inputRes, std::vector<double>* outputRes, std::vector<float>* inputOrientationYaw, std::vector<float>* outputOrientationYaw){
   float distBetweenPoints;
   int toClose = 0;
   for(int i=0;i<points->size();i++){
@@ -296,6 +296,8 @@ void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointC
     }
     if(toClose==0){
       outputPoints->push_back({points->at(i).x,points->at(i).y,points->at(i).z});
+      outputRes->push_back(inputRes->at(i)); //TODO:check this
+      outputOrientationYaw->push_back(inputOrientationYaw->at(i));
     }
   }
 }

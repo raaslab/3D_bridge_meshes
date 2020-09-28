@@ -400,6 +400,8 @@ int main(int argc, char** argv){
     std::vector<int> point2ClusterMapping;
     std::vector<double> tempRes;
     std::vector<float> tempOrientation;
+    std::vector<double> tempRes1;
+    std::vector<float> tempOrientation1;
     std::vector<float> orientationOfCPs;
     int numOfCluster = 0;
     myfile1<<"===="<<loopNumber<<"===="<<std::endl;
@@ -409,8 +411,8 @@ int main(int argc, char** argv){
       tempZ1 = cloudOccTrimmed->points[j].z;
       tempPoints->clear();
       tempPoints1->clear();
-      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints1,&tempRes,&tempOrientation);
-      removeVoxelsTooClose(tempPoints1,cloudOccFull,sizeOfUAV+(zFilteredSize.at(j)/2),tempPoints);
+      findIfVoxelCanBeSeen(tempX1,tempY1,tempZ1,zFilteredSize.at(j),cloudFreeFull,freeSizeFull,minRadius,maxRadius,sizeOfUAV,tempPoints1,&tempRes1,&tempOrientation1);
+      removeVoxelsTooClose(tempPoints1,cloudOccFull,sizeOfUAV+(zFilteredSize.at(j)/2),tempPoints,&tempRes1,&tempRes,&tempOrientation1,&tempOrientation);
         myfile1<<j<<". view point: ";
         myfile1<<cloudOccTrimmed->points[j]<<std::endl;
       if(tempPoints->size()>0){
@@ -559,21 +561,18 @@ int main(int argc, char** argv){
           updateT = ros::Time::now();
           myfileDA << updateT-beginT << "," << moveit_distance << std::endl;
           myfileDE << updateT-beginT << "," << sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))<< std::endl;
-        }
-        else{
+        } else{
           ac.cancelAllGoals();
           ROS_INFO("Action did not finish before the time out.");
         }
         if(currentPointNumber >= tour.size()-1){ // check if the current tour point is the last one and loop
           currentPointNumber = 0;
-        }
-        else{
+        } else{
           currentPointNumber++;
         }
         if(tour.size()-1 == countMoveit){ // check if all tour points have been visited
           tspDone = true;
-        }
-        else{
+        } else{
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
@@ -581,18 +580,12 @@ int main(int argc, char** argv){
         resetFlag_pub.publish(resetFlag_msg);
         for(int i=0;i<visitedPointsList->size();i++){
           for(int j=0;j<clusterdPoints->size();j++){
-            if(clusteredPoints->at(j) == visitedPointsList->at(i)){
-              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping->at(j)-1));
+            if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){ //TODO:check this
+              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping->at(j)-1)); //TODO:check this
               break;
             }
-            // viewPoints // cluster:(x,y,z)
-            // clusteredPoints // 0:(x,y,z); 1:(x,y,z);... pointID:(x,y,z)
-            // point2ClusterMapping // 0:1;1:1;2:2;3:2;... pointID:cluster
-            // tempRes; // pointID:point resolution
           }
-          // std::cout<<visitedPointsList->at(i)<<std::endl;
         }
-        // TODO: add the visitedPointsList to the runningVisitedVoxels
       }
     }
 
