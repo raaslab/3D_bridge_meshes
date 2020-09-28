@@ -565,9 +565,9 @@ int main(int argc, char** argv){
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
         for(int i=0;i<visitedPointsList->size();i++){
-          for(int j=0;j<clusterdPoints->size();j++){
+          for(int j=0;j<clusteredPoints->size();j++){
             if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){ //TODO:check this
-              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping->at(j)-1)); //TODO:check this
+              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping.at(j)-1)); //TODO:check this
               break;
             }
           }
