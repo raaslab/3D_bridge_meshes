@@ -95,11 +95,6 @@ target_link_libraries(markers ${catkin_LIBRARIES})
 add_executable(visitedPoints_Publisher src/visitedPoints_Publisher.cpp)
 target_link_libraries(visitedPoints_Publisher ${PROJECT_NAME} ${LINK_LIBS})
 
-# add_executable(hector_explorer_octomap src/Explorer.cpp src/explorer_node.cpp)
-# target_compile_options(hector_explorer_octomap PRIVATE ${OpenMP_FLAGS} ${CMAKE_CXX_FLAGS})
-# target_link_libraries(hector_explorer_octomap ${OCTOMAP_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenMP_LIBS})
-# add_dependencies(hector_explorer_octomap hector_uav_msgs_generate_messages hector_moveit_actions_generate_messages)
-
 # install targets:
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_color
   octomap_server_node
