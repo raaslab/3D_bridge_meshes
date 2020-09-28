@@ -40,6 +40,7 @@ int main(int argc, char **argv){
     if(!rF){
       ROS_INFO("If");
       visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z; //TODO:check this
+      ROS_INFO("After if");
       if(visitedPointsList->size()){ //TODO: CHECK THIS
         ROS_INFO("Second if");
         pointList_pub.publish(visitedPointsList);
