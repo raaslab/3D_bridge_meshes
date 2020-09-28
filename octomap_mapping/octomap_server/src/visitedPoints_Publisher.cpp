@@ -41,6 +41,7 @@ int main(int argc, char **argv){
       visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z;
       if(visitedPointsList->size()){
         pointList_pub.publish(visitedPointsList);
+        ROS_INFO("size of visitedPointsList: %d", visitedPointsList->size());
       }
       count++;
     }
