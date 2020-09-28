@@ -118,7 +118,7 @@ float mag_product3(std::vector<float> vector_a){
   return sqrt(pow(vector_a[0],2)+pow(vector_a[1],2)+pow(vector_a[2],2));
 }
 
-//Find Dot/ Scalar product
+//Find Dot/Scalar product
 float dot_product(std::vector<float> lhs, std::vector<float> rhs){
   return std::inner_product(lhs.begin(), lhs.end(), rhs.begin(), 0);
 }
@@ -288,6 +288,8 @@ void removeVoxelsTooClose(pcl::PointCloud<pcl::PointXYZ>::Ptr points,pcl::PointC
     }
   }
 }
+
+
 
 
 void testCode(std::vector<double>* outputRes){

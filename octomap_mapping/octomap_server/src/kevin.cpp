@@ -530,7 +530,6 @@ int main(int argc, char** argv){
           resetFlag_msg.data=1;
           resetFlag_pub.publish(resetFlag_msg);
           ROS_INFO("moveit distance was too different from euclidean differance.");
-          ROS_INFO("breaking out");
           break;
         }
         length_ready = false;
@@ -581,7 +580,8 @@ int main(int argc, char** argv){
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
         for(int i=0;i<visitedPointsList->size();i++){
-          std::cout<<visitedPointsList->at(i)<<std::endl;
+
+          // std::cout<<visitedPointsList->at(i)<<std::endl;
         }
         // TODO: add the visitedPointsList to the runningVisitedVoxels
       }
