@@ -1,4 +1,4 @@
-#include <Explorer.h>
+#include <../include/Explorer.h>
 
 Quadrotor::Quadrotor(ros::NodeHandle& nh) : trajectory_client("/action/trajectory",true)
 {
