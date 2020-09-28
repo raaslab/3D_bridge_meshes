@@ -239,10 +239,8 @@ int main(int argc, char** argv){
   if(finished_before_timeout)
   {
     actionlib::SimpleClientGoalState state = ac.getState();
-    // ROS_INFO("Takeoff finished: %s", state.toString().c_str());
   }
-  else
-    ROS_INFO("Takeoff did not finish before the time out");
+  else ROS_INFO("Takeoff did not finish before the time out");
   goal.goal_pose.position.x = 0;
   goal.goal_pose.position.y = -1;
   goal.goal_pose.position.z = 3;
@@ -255,8 +253,7 @@ int main(int argc, char** argv){
   if(finished_before_timeout){
     actionlib::SimpleClientGoalState state = ac.getState();
     // ROS_INFO("Takeoff finished: %s", state.toString().c_str());
-  }
-  else
+  } else
     ROS_INFO("Takeoff did not finish before the time out");
   goal.goal_pose.position.x = 0;
   goal.goal_pose.position.y = -1;
@@ -270,8 +267,7 @@ int main(int argc, char** argv){
   if(finished_before_timeout){
     actionlib::SimpleClientGoalState state = ac.getState();
     ROS_INFO("Takeoff finished: %s", state.toString().c_str());
-  }
-  else
+  } else
     ROS_INFO("Takeoff did not finish before the time out");
 
   ROS_INFO("Finished all takeoff maneuvers");
@@ -299,15 +295,13 @@ int main(int argc, char** argv){
         fullOccupiedMarkers.scale.x = markerSize; fullOccupiedMarkers.scale.y = markerSize; fullOccupiedMarkers.scale.z = markerSize;
         occArrayFull.markers.push_back(fullOccupiedMarkers);
         countOccFull = countOccFull + 1;
-      }
-      else if(it->getValue()<thresholdFree){
+      } else if(it->getValue()<thresholdFree){
         fullFreeMarkers.pose.position.x = it.getX(); fullFreeMarkers.pose.position.y = it.getY(); fullFreeMarkers.pose.position.z = it.getZ();
         fullFreeMarkers.id = id4Markers;
         fullFreeMarkers.scale.x = markerSize; fullFreeMarkers.scale.y = markerSize; fullFreeMarkers.scale.z = markerSize;
         freeArrayFull.markers.push_back(fullFreeMarkers);
         countFreeFull = countFreeFull + 1;
-      }
-      else{
+      } else{
         fullUnknownMarkers.pose.position.x = it.getX(); fullUnknownMarkers.pose.position.y = it.getY(); fullUnknownMarkers.pose.position.z = it.getZ();
         fullUnknownMarkers.id = id4Markers;
         fullUnknownMarkers.scale.x = markerSize; fullUnknownMarkers.scale.y = markerSize; fullUnknownMarkers.scale.z = markerSize;
@@ -325,15 +319,13 @@ int main(int argc, char** argv){
         trimmedOccupiedMarkers.scale.x = markerSize; trimmedOccupiedMarkers.scale.y = markerSize; trimmedOccupiedMarkers.scale.z = markerSize;
         occArrayTrimmed.markers.push_back(trimmedOccupiedMarkers);
         countOccTrimmed = countOccTrimmed + 1;
-      }
-      else if(it->getValue()<thresholdFree){
+      } else if(it->getValue()<thresholdFree){
         trimmedFreeMarkers.pose.position.x = it.getX(); trimmedFreeMarkers.pose.position.y = it.getY(); trimmedFreeMarkers.pose.position.z = it.getZ();
         trimmedFreeMarkers.id = id4Markers;
         trimmedFreeMarkers.scale.x = markerSize; trimmedFreeMarkers.scale.y = markerSize; trimmedFreeMarkers.scale.z = markerSize;
         freeArrayTrimmed.markers.push_back(trimmedFreeMarkers);
         countFreeTrimmed = countFreeTrimmed + 1;
-      }
-      else{
+      } else{
         trimmedUnknownMarkers.pose.position.x = it.getX(); trimmedUnknownMarkers.pose.position.y = it.getY(); trimmedUnknownMarkers.pose.position.z = it.getZ();
         trimmedUnknownMarkers.id = id4Markers;
         trimmedUnknownMarkers.scale.x = markerSize; trimmedUnknownMarkers.scale.y = markerSize; trimmedUnknownMarkers.scale.z = markerSize;
@@ -359,13 +351,11 @@ int main(int argc, char** argv){
         cloudOccFull->points[countOccFull].x = it.getX(); cloudOccFull->points[countOccFull].y = it.getY(); cloudOccFull->points[countOccFull].z = it.getZ();
         occSizeFull.push_back(it.getSize());
         countOccFull = countOccFull + 1;
-      }
-      else if(it->getValue()<thresholdFree){
+      } else if(it->getValue()<thresholdFree){
         cloudFreeFull->points[countFreeFull].x = it.getX(); cloudFreeFull->points[countFreeFull].y = it.getY(); cloudFreeFull->points[countFreeFull].z = it.getZ();
         freeSizeFull.push_back(it.getSize());
         countFreeFull = countFreeFull + 1;
-      }
-      else{
+      } else{
         cloudUnknownFull->points[countUnknownFull].x = it.getX(); cloudUnknownFull->points[countUnknownFull].y = it.getY(); cloudUnknownFull->points[countUnknownFull].z = it.getZ();
         countUnknownFull = countUnknownFull + 1;
       }
@@ -434,8 +424,7 @@ int main(int argc, char** argv){
     if(numOfCluster<2){ // the structure has been covered
       ROS_INFO("No clusters");
       structureCovered = 1;
-    }
-    else{ // sending usable point cloud to Naik's code
+    } else{ // sending usable point cloud to Naik's code
       ROS_INFO("Sending usable graph to gtsp solver");
       gtsp::GTSPData gtsp_data;
       pcl::PCLPointCloud2 pcl_pc;
@@ -477,16 +466,14 @@ int main(int argc, char** argv){
         actionlib::SimpleClientGoalState state = ac.getState();
         ROS_INFO("Last state reached: %s", state.toString().c_str());
         break;
-      }
-      else{
+      } else{
         ac.cancelAllGoals();
         ROS_INFO("Could not reach origin in time alloted");
         break;
       }
       ROS_INFO("Code done");
       break;
-    }
-    else{
+    } else{
       ros::Time startTime = ros::Time::now();
       ros::Duration elapsed = ros::Time::now()-startTime;
       pcl::KdTree<pcl::PointXYZ>::Ptr gtspTree (new pcl::KdTreeFLANN<pcl::PointXYZ>);
@@ -499,8 +486,7 @@ int main(int argc, char** argv){
       while(true){
         if(std::count(tour.begin(),tour.end(),nn_indices[currentPoint])){
           break;
-        }
-        else{
+        } else{
           currentPoint++;
         }
       }
