@@ -74,12 +74,7 @@ int checkIfFloatsAreTheSame(float num1, float num2, int precision){
 }
 
 int checkIfPointIsInVoxel(pcl::PointXYZ POI, pcl::PointXYZ voxelPoint, float vr){ //TODO: check this
-  float px = POI.x;
-  float py = POI.y;
-  float pz = POI.z;
-  float vx = voxelPoint.x;
-  float vy = voxelPoint.y;
-  float vz = voxelPoint.z;
+  float px = POI.x; float py = POI.y; float pz = POI.z; float vx = voxelPoint.x; float vy = voxelPoint.y; float vz = voxelPoint.z;
   if(vx-(vr/2)<px<vx+(vr/2) && vy-(vr/2)<py<vy+(vr/2) && vz-(vr/2)<pz<vz+(vr/2)){
     return 1;
   } else return 0;
