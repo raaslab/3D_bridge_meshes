@@ -44,7 +44,6 @@ int main(int argc, char **argv){
         for(int i=0;i<visitedPointsList->size();i++){
           std::cout<<visitedPointsList->at(i)<<std::endl;
         }
-        std::cout<<
       }
       count++;
     }
