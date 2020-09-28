@@ -118,10 +118,12 @@ void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
   }
 }
 
-// void visitedPointList_cb(const std::vector<geometry_msgs/points>& msg){
-//   visitedPointsList = msg;
-// }
-
+void visitedPointList_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){ //TODO: check this
+  tempCloudOccTrimmed->clear();
+  BOOST_FOREACH(const pcl::PointXYZ& pt, msg->points){
+    tempCloudOccTrimmed->points.push_back(pcl::PointXYZ(pt.x,pt.y,pt.z));
+  }
+}
 
 int main(int argc, char** argv){
   std::ofstream myfile;
@@ -161,7 +163,7 @@ int main(int argc, char** argv){
   ros::Subscriber distance_sub = n.subscribe("/compute_path/length", 1, lengthCallback);
   ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
   ros::Subscriber zFilteredSize_sub = n.subscribe("/zFilteredSize", 1, zFilteredSize_cb);
-  // ros::Subscriber visitedPointList_sub = n.subscribe("/visited_point_list", 1, visitedPointList_cb);
+  ros::Subscriber visitedPointList_sub = n.subscribe("/visited_point_list", 1, visitedPointList_cb); //TODO: check this
 
 // initializing arrays
   pcl::PointXYZ searchPoint;

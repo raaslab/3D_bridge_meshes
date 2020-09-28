@@ -9,15 +9,9 @@
 #include <pcl/point_types.h>
 
 
-
-
-
-
 float rF = 0; //reset flag
 geometry_msgs::Pose currentPose;
-sensor_msgs::PointCloud2 visitedPointsList;
-
-// sensor_msgs::PointCloud2 currentPose; //pose message
+pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>); //TODO: check this
 
 void resetFlag_cb(const std_msgs::Float64& msg){ //TODO: CHECK IF THIS WORKS
   rF = msg.data;
@@ -32,21 +26,23 @@ void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu call back
 int main(int argc, char **argv){
   ros::init(argc, argv, "visitedPointPublisher");
   ros::NodeHandle n;
-  ros::Publisher pointList = n.advertise<sensor_msgs::PointCloud2>("/visited_point_list",1); //TODO: CHECK IF THIS WORKS
+  ros::Publisher pointList_pub = n.advertise<pcl::PointCloud<pcl::PointXYZ>> ("/visited_point_list",1,true); //TODO: CHECK THIS
   ros::Subscriber resetFlag = n.subscribe("/resetFlag", 1, resetFlag_cb);
-  ros::Subscriber uavIMU_sub = n.subscribe("/ground_truth_to_tf/pose",1,imu_cb); //TODO: CHECK IF THIS WORKS
+  ros::Subscriber uavIMU_sub = n.subscribe("/ground_truth_to_tf/pose",1,imu_cb);
   ros::Rate loop_rate(1);
-  // std::vector<geometry_msgs/points> visitedPointsList;
-
+  visitedPointsList->header.frame_id = "/world";
+  int count = 0;
   while (ros::ok()){
     ros::spinOnce();
+    visitedPointsList->width = count; visitedPointsList->height = 1; visitedPointsList->points.resize (visitedPointsList->width * visitedPointsList->height);
     if(!rF){
-      visitedPointsList.data; //TODO: CHECK IF THIS WORKS
-      // pointList.publish(visitedPointsList); //TODO: CHECK IF THIS WORKS
-      // add (x,y,z) points to vector
-      // publish vector
+      visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z; //TODO:check this
+      if(visitedPointsList->size()){ //TODO: CHECK THIS
+        pointList_pub.publish(visitedPointsList);
+      }
     }
     else{
+      visitedPointsList->clear(); //TODO:check this
       // visitedPointsList.clear(); //TODO: CHECK IF THIS WORKS
     }
     loop_rate.sleep();
