@@ -50,6 +50,7 @@ int main(int argc, char **argv){
     else{
       ROS_INFO("Else");
       visitedPointsList->clear(); //TODO:check this
+      count = 0;
       // visitedPointsList.clear(); //TODO: CHECK IF THIS WORKS
     }
     loop_rate.sleep();
