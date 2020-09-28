@@ -62,7 +62,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr runningVisitedVoxels (new pcl::PointCloud<pc
 pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl::PointXYZ>);
 std::vector<double> tempzFilteredSize;
 std_msgs::Float64 resetFlag_msg;
-// sensor_msgs::PointCloud2 visitedPointsList;
+pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
@@ -119,9 +119,9 @@ void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
 }
 
 void visitedPointList_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){ //TODO: check this
-  tempCloudOccTrimmed->clear();
+  visitedPointsList->clear();
   BOOST_FOREACH(const pcl::PointXYZ& pt, msg->points){
-    tempCloudOccTrimmed->points.push_back(pcl::PointXYZ(pt.x,pt.y,pt.z));
+    visitedPointsList->points.push_back(pcl::PointXYZ(pt.x,pt.y,pt.z));
   }
 }
 
@@ -285,6 +285,8 @@ int main(int argc, char** argv){
   ROS_INFO("Finished");
 // problem is that GLNS will crash if empty set
   while (ros::ok()){
+    resetFlag_msg.data=1;
+    resetFlag_pub.publish(resetFlag_msg);
     ros::spinOnce();
 // initializing variables
     id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0; markerSize = 0;
