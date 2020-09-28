@@ -38,13 +38,15 @@ int main(int argc, char **argv){
     ROS_INFO("while loop: %d", count);
     visitedPointsList->width = count+1; visitedPointsList->height = 1; visitedPointsList->points.resize (visitedPointsList->width * visitedPointsList->height);
     if(!rF){
-      ROS_INFO("If");
       visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z; //TODO:check this
-      ROS_INFO("After if");
-      if(visitedPointsList->size()){ //TODO: CHECK THIS
-        ROS_INFO("Second if");
+      if(visitedPointsList->size()){
         pointList_pub.publish(visitedPointsList);
+        for(int i=0;i<visitedPointsList->size();i++){
+          std::cout<<visitedPointList->at(i)<<std::endl;
+        }
+        std::cout<<
       }
+      count++;
     }
     else{
       ROS_INFO("Else");
