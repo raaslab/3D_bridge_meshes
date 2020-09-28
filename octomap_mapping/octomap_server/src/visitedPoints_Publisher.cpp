@@ -42,7 +42,7 @@ int main(int argc, char **argv){
       if(visitedPointsList->size()){
         pointList_pub.publish(visitedPointsList);
         for(int i=0;i<visitedPointsList->size();i++){
-          std::cout<<visitedPointList->at(i)<<std::endl;
+          std::cout<<visitedPointsList->at(i)<<std::endl;
         }
         std::cout<<
       }
