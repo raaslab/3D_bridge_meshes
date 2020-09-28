@@ -580,6 +580,10 @@ int main(int argc, char** argv){
         }
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
+        for(int i=0;i<visitedPointsList->size();i++){
+          std::cout<<visitedPointsList->at(i)<<std::endl;
+        }
+        // TODO: add the visitedPointsList to the runningVisitedVoxels
       }
     }
 

@@ -11,14 +11,14 @@
 
 float rF = 0; //reset flag
 geometry_msgs::Pose currentPose;
-pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>); //TODO: check this
+pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
 
-void resetFlag_cb(const std_msgs::Float64& msg){ //TODO: CHECK IF THIS WORKS
+void resetFlag_cb(const std_msgs::Float64& msg){ // reset flag
   rF = msg.data;
   ROS_INFO("I heard: [%f]", msg.data);
 }
 
-void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu call back
+void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu
   pcl::PointXYZ tempPoint(msg.pose.position.x,msg.pose.position.y,msg.pose.position.z);
   currentPose = msg.pose;
 }
@@ -37,21 +37,16 @@ int main(int argc, char **argv){
     ros::spinOnce();
     ROS_INFO("while loop: %d", count);
     visitedPointsList->width = count+1; visitedPointsList->height = 1; visitedPointsList->points.resize (visitedPointsList->width * visitedPointsList->height);
-    if(!rF){
-      visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z; //TODO:check this
+    if(!rF){ // adding points
+      visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z;
       if(visitedPointsList->size()){
         pointList_pub.publish(visitedPointsList);
-        for(int i=0;i<visitedPointsList->size();i++){
-          std::cout<<visitedPointsList->at(i)<<std::endl;
-        }
       }
       count++;
     }
     else{
-      ROS_INFO("Else");
-      visitedPointsList->clear(); //TODO:check this
+      visitedPointsList->clear();
       count = 0;
-      // visitedPointsList.clear(); //TODO: CHECK IF THIS WORKS
     }
     loop_rate.sleep();
   }
