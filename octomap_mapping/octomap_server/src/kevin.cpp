@@ -118,7 +118,7 @@ void zFilteredSize_cb(const std_msgs::Float64MultiArray& msg){
   }
 }
 
-void visitedPointList_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){ //TODO: check this
+void visitedPointList_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){
   visitedPointsList->clear();
   BOOST_FOREACH(const pcl::PointXYZ& pt, msg->points){
     visitedPointsList->points.push_back(pcl::PointXYZ(pt.x,pt.y,pt.z));
@@ -163,7 +163,7 @@ int main(int argc, char** argv){
   ros::Subscriber distance_sub = n.subscribe("/compute_path/length", 1, lengthCallback);
   ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
   ros::Subscriber zFilteredSize_sub = n.subscribe("/zFilteredSize", 1, zFilteredSize_cb);
-  ros::Subscriber visitedPointList_sub = n.subscribe("/visited_point_list", 1, visitedPointList_cb); //TODO: check this
+  ros::Subscriber visitedPointList_sub = n.subscribe("/visited_point_list", 1, visitedPointList_cb);
 
 // initializing arrays
   pcl::PointXYZ searchPoint;
@@ -566,8 +566,8 @@ int main(int argc, char** argv){
         resetFlag_pub.publish(resetFlag_msg);
         for(int i=0;i<visitedPointsList->size();i++){
           for(int j=0;j<clusteredPoints->size();j++){
-            if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){ //TODO:check this
-              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping.at(j)-1)); //TODO:check this
+            if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
+              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping.at(j)-1));
               break;
             }
           }
