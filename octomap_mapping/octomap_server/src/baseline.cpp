@@ -39,21 +39,46 @@
 #include <std_msgs/Float64.h>
 
 #define MAX_TOUR_SIZE 25
-
-
 // global variables
+pcl::PointCloud<pcl::PointXYZ>::Ptr runningVisitedVoxels (new pcl::PointCloud<pcl::PointXYZ>);
 
+void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu
+  pcl::PointXYZ tempPoint(msg.pose.position.x,msg.pose.position.y,msg.pose.position.z);
+  currentPose = msg.pose;
+}
+
+void zFiltered_cb(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg){
+  tempCloudOccTrimmed->clear();
+  BOOST_FOREACH(const pcl::PointXYZ& pt, msg->points){
+    tempCloudOccTrimmed->points.push_back(pcl::PointXYZ(pt.x,pt.y,pt.z));
+  }
+}
 
 int main(int argc, char** argv){
 // initializing ROS everything
   ros::init(argc, argv, "baseline");
   ros::NodeHandle n;
   ros::Rate r(0.05); // less than 1 is slower
+  ros::Subscriber uavIMU_sub = n.subscribe("/ground_truth_to_tf/pose",1,imu_cb);
+  ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
+
 
 
 // problem is that GLNS will crash if empty set
   while (ros::ok()){
     ros::spinOnce();
 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr viewPoints (new pcl::PointCloud<pcl::PointXYZ>);
+    std::vector<int> point2ClusterMapping;
+
+
+    for(int i=0;i<visitedPointsList->size();i++){ //adding to running visited
+      for(int j=0;j<clusteredPoints->size();j++){
+        if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
+          runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping.at(j)-1));
+          break;
+        }
+      }
+    }
   }
 }

@@ -239,8 +239,7 @@ int main(int argc, char** argv){
   if(finished_before_timeout)
   {
     actionlib::SimpleClientGoalState state = ac.getState();
-  }
-  else ROS_INFO("Takeoff did not finish before the time out");
+  } else ROS_INFO("Takeoff did not finish before the time out");
   goal.goal_pose.position.x = 0;
   goal.goal_pose.position.y = -1;
   goal.goal_pose.position.z = 3;
@@ -253,8 +252,7 @@ int main(int argc, char** argv){
   if(finished_before_timeout){
     actionlib::SimpleClientGoalState state = ac.getState();
     // ROS_INFO("Takeoff finished: %s", state.toString().c_str());
-  } else
-    ROS_INFO("Takeoff did not finish before the time out");
+  } else ROS_INFO("Takeoff did not finish before the time out");
   goal.goal_pose.position.x = 0;
   goal.goal_pose.position.y = -1;
   goal.goal_pose.position.z = 6;
@@ -267,11 +265,9 @@ int main(int argc, char** argv){
   if(finished_before_timeout){
     actionlib::SimpleClientGoalState state = ac.getState();
     ROS_INFO("Takeoff finished: %s", state.toString().c_str());
-  } else
-    ROS_INFO("Takeoff did not finish before the time out");
+  } else ROS_INFO("Takeoff did not finish before the time out");
 
   ROS_INFO("Finished all takeoff maneuvers");
-
   ROS_INFO("Waiting for gtsp_solver and distance_publisher to subscribe");
   ros::Rate poll_rate(100);
   while(point_cloud_publisher.getNumSubscribers() == 0)
