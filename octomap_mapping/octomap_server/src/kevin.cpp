@@ -568,11 +568,18 @@ int main(int argc, char** argv){
         }
         ros::spinOnce();
         float realDistance = 0;
+        bool found;
         for(int i=0;i<visitedPointsList->size();i++){
           for(int j=0;j<clusteredPoints->size();j++){
             if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
               pcl::PointXYZ tempPoint = viewPoints->at(point2ClusterMapping.at(j)-1);
-              bool found = std::find(runningVisitedVoxels->begin(),runningVisitedVoxels->end(),tempPoint) != runningVisitedVoxels->end();
+              found = false;
+              for(int k=0;k<runningVisitedVoxels->size();k++){
+                if(runningVisitedVoxels->at(k)==tempPoint){
+                  found = true;
+                  break;
+                }
+              }
               if(!found){
                 runningVisitedVoxels->push_back(tempPoint);
               }
