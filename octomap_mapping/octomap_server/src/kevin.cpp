@@ -275,8 +275,7 @@ int main(int argc, char** argv){
   while(goal_distance_publisher.getNumSubscribers() == 0)
     poll_rate.sleep();
   ROS_INFO("Finished");
-// problem is that GLNS will crash if empty set
-  while (ros::ok()){
+  while (ros::ok()){ //Main while loop
     resetFlag_msg.data=1;
     resetFlag_pub.publish(resetFlag_msg);
     ros::spinOnce();
