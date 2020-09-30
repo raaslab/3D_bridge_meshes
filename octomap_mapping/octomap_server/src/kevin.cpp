@@ -136,6 +136,8 @@ int main(int argc, char** argv){
   myfileDA.open("/home/klyu/bridgeInspection/timeVSDistanceActual.csv");
   std::ofstream myfileDE;
   myfileDE.open("/home/klyu/bridgeInspection/timeVSDistanceExpected.csv");
+  std::ofstream myfileCompTime;
+  myfileCompTime.open("/home/klyu/bridgeInspection/timeVSComputationalTime.csv");
 
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
@@ -145,6 +147,8 @@ int main(int argc, char** argv){
   ros::Rate distanceSleep(10);
   ros::Time beginT = ros::Time::now();
   ros::Time updateT;
+  ros::Time compT_begin;
+  ros::Time compT_end;
   ros::Publisher occArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayTrimmed_pub",1,true);
   ros::Publisher freeArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/freeArrayTrimmed_pub",1,true);
   ros::Publisher occArrayFull_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayFull_pub",1,true);
@@ -276,6 +280,7 @@ int main(int argc, char** argv){
     poll_rate.sleep();
   ROS_INFO("Finished");
   while (ros::ok()){ //Main while loop
+    compT_begin = ros::Time::now();
     resetFlag_msg.data=1;
     resetFlag_pub.publish(resetFlag_msg);
     ros::spinOnce();
@@ -415,6 +420,8 @@ int main(int argc, char** argv){
       myfile1<<std::endl;
     }
     std::cout << "cloud free size: " << cloudFreeFull->size() << std::endl;
+    compT_end = ros::Time::now();
+    myfileCompTime<<loopNumber<<","<<compT_end-compT_begin<<std::endl;
 
     if(numOfCluster<2){ // the structure has been covered
       ROS_INFO("No clusters");
@@ -591,5 +598,6 @@ int main(int argc, char** argv){
   myfileT.close();
   myfileDA.close();
   myfileDE.close();
+  myfileCompTime.close();
   return 0;
 }
