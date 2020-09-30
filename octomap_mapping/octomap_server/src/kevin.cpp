@@ -571,7 +571,10 @@ int main(int argc, char** argv){
         for(int i=0;i<visitedPointsList->size();i++){
           for(int j=0;j<clusteredPoints->size();j++){
             if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
-              runningVisitedVoxels->push_back(viewPoints->at(point2ClusterMapping.at(j)-1));
+              pcl::PointXYZ tempPoint = viewPoints->at(point2ClusterMapping.at(j)-1);
+              if(!(std::find(runningVisitedVoxels->begin(),runningVisitedVoxels->end(),tempPoint) != runningVisitedVoxels->end()){
+                runningVisitedVoxels->push_back();
+              }
               break;
             }
           }
