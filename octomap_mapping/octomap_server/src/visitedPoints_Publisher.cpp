@@ -26,7 +26,7 @@ void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu
 int main(int argc, char **argv){
   ros::init(argc, argv, "visitedPointPublisher");
   ros::NodeHandle n;
-  ros::Publisher pointList_pub = n.advertise<pcl::PointCloud<pcl::PointXYZ>> ("/visited_point_list",1,true); //TODO: CHECK THIS
+  ros::Publisher pointList_pub = n.advertise<pcl::PointCloud<pcl::PointXYZ>> ("/visited_point_list",1,true);
   ros::Subscriber resetFlag = n.subscribe("/resetFlag", 1, resetFlag_cb);
   ros::Subscriber uavIMU_sub = n.subscribe("/ground_truth_to_tf/pose",1,imu_cb);
   ros::Rate loop_rate(1);

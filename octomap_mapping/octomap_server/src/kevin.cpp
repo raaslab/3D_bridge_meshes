@@ -132,12 +132,14 @@ int main(int argc, char** argv){
   myfile1.open("/home/klyu/bridgeInspection/testClusters.txt");
   std::ofstream myfileT;
   myfileT.open("/home/klyu/bridgeInspection/timeVSTrimmedOcc.csv");
-  std::ofstream myfileDA;
+  std::ofstream myfileDA; // actual distance
   myfileDA.open("/home/klyu/bridgeInspection/timeVSDistanceActual.csv");
-  std::ofstream myfileDE;
+  std::ofstream myfileDE; // expected distance
   myfileDE.open("/home/klyu/bridgeInspection/timeVSDistanceExpected.csv");
   std::ofstream myfileCompTime;
   myfileCompTime.open("/home/klyu/bridgeInspection/timeVSComputationalTime.csv");
+  std::ofstream myfileDR; // real distance
+  myfileDR.open("/home/klyu/bridgeInspection/timeVSDistanceReal.csv");
 
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
@@ -564,8 +566,8 @@ int main(int argc, char** argv){
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
-        resetFlag_msg.data=1;
-        resetFlag_pub.publish(resetFlag_msg);
+        ros::spinOnce();
+        float realDistance = 0;
         for(int i=0;i<visitedPointsList->size();i++){
           for(int j=0;j<clusteredPoints->size();j++){
             if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
@@ -574,6 +576,12 @@ int main(int argc, char** argv){
             }
           }
         }
+        for(int i=0;i<visitedPointsList->size()-1;i++){
+          realDistance += sqrt(pow(visitedPointsList->at(i+1).x-visitedPointsList->at(i).x,2)+pow(visitedPointsList->at(i+1).y-visitedPointsList->at(i).y,2)+pow(visitedPointsList->at(i+1).z-visitedPointsList->at(i).z,2));
+        }
+        myfileDR<<updateT-beginT<<","<<realDistance<<std::endl;
+        resetFlag_msg.data=1;
+        resetFlag_pub.publish(resetFlag_msg);
       }
     }
 
@@ -599,5 +607,6 @@ int main(int argc, char** argv){
   myfileDA.close();
   myfileDE.close();
   myfileCompTime.close();
+  myfileDR.close();
   return 0;
 }
