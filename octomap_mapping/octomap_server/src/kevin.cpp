@@ -575,7 +575,7 @@ int main(int argc, char** argv){
               pcl::PointXYZ tempPoint = viewPoints->at(point2ClusterMapping.at(j)-1);
               found = false;
               for(int k=0;k<runningVisitedVoxels->size();k++){
-                if(runningVisitedVoxels->at(k)==tempPoint){
+                if(runningVisitedVoxels->at(k).x==tempPoint.x && runningVisitedVoxels->at(k).y==tempPoint.y && runningVisitedVoxels->at(k).z==tempPoint.z){
                   found = true;
                   break;
                 }
