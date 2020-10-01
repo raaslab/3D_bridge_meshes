@@ -422,8 +422,7 @@ int main(int argc, char** argv){
       myfile1<<std::endl;
     }
     std::cout << "cloud free size: " << cloudFreeFull->size() << std::endl;
-    compT_end = ros::Time::now();
-    myfileCompTime<<loopNumber<<","<<compT_end-compT_begin<<std::endl;
+    compT_endAlgo = ros::Time::now();
 
     if(numOfCluster<2){ // the structure has been covered
       ROS_INFO("No clusters");
@@ -449,6 +448,7 @@ int main(int argc, char** argv){
       tour_ready = false;
       ROS_INFO("Tour ready");
     }
+    compT_endGTSP = ros::Time::now();
 
 // publishing voxel arrays
     occArrayTrimmed_pub.publish(occArrayTrimmed);
@@ -477,7 +477,7 @@ int main(int argc, char** argv){
       }
       ROS_INFO("Code done");
       break;
-    } else{
+    } else{ //executing tour
       ros::Time startTime = ros::Time::now();
       ros::Duration elapsed = ros::Time::now()-startTime;
       pcl::KdTree<pcl::PointXYZ>::Ptr gtspTree (new pcl::KdTreeFLANN<pcl::PointXYZ>);
@@ -587,6 +587,8 @@ int main(int argc, char** argv){
             }
           }
         }
+        compT_endFlight = ros::Time::now();
+        myfileCompTime<<loopNumber<<","<<compT_endAlgo-compT_begin<<","<<compT_endGTSP-compT_endAlgo<<","<<compT_endFlight-compT_endGTSP<<std::endl;
         for(int i=0;i<visitedPointsList->size()-1;i++){
           realDistance += sqrt(pow(visitedPointsList->at(i+1).x-visitedPointsList->at(i).x,2)+pow(visitedPointsList->at(i+1).y-visitedPointsList->at(i).y,2)+pow(visitedPointsList->at(i+1).z-visitedPointsList->at(i).z,2));
         }
