@@ -150,7 +150,9 @@ int main(int argc, char** argv){
   ros::Time beginT = ros::Time::now();
   ros::Time updateT;
   ros::Time compT_begin;
-  ros::Time compT_end;
+  ros::Time compT_endAlgo;
+  ros::Time compT_endGTSP;
+  ros::Time compT_endFlight;
   ros::Publisher occArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayTrimmed_pub",1,true);
   ros::Publisher freeArrayTrimmed_pub = n.advertise<visualization_msgs::MarkerArray>("/freeArrayTrimmed_pub",1,true);
   ros::Publisher occArrayFull_pub = n.advertise<visualization_msgs::MarkerArray>("/occArrayFull_pub",1,true);
