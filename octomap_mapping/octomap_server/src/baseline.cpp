@@ -219,29 +219,31 @@ int main(int argc, char** argv){
         orientationOfCPs.push_back(tempOrientation[i]);
       }
     }
-
     float realDistance = 0;
     bool found;
     for(int i=0;i<visitedPointsList->size();i++){
-          for(int j=0;j<clusteredPoints->size();j++){
-            if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
-              pcl::PointXYZ tempPoint = viewPoints->at(point2ClusterMapping.at(j)-1);
-              found = false;
-              for(int k=0;k<runningVisitedVoxels->size();k++){
-                if(runningVisitedVoxels->at(k).x==tempPoint.x && runningVisitedVoxels->at(k).y==tempPoint.y && runningVisitedVoxels->at(k).z==tempPoint.z){
-                  found = true;
-                  break;
-                }
-              }
-              if(!found){
-                runningVisitedVoxels->push_back(tempPoint);
-              }
+      for(int j=0;j<clusteredPoints->size();j++){
+        if(checkIfPointIsInVoxel(visitedPointsList->at(i), clusteredPoints->at(j), tempRes.at(j))){
+          pcl::PointXYZ tempPoint = viewPoints->at(point2ClusterMapping.at(j)-1);
+          found = false;
+          for(int k=0;k<runningVisitedVoxels->size();k++){
+            if(runningVisitedVoxels->at(k).x==tempPoint.x && runningVisitedVoxels->at(k).y==tempPoint.y && runningVisitedVoxels->at(k).z==tempPoint.z){
+              found = true;
               break;
             }
           }
+          if(!found){
+            runningVisitedVoxels->push_back(tempPoint);
+          }
+          break;
         }
-    for(int i=0;i<visitedPointsList->size()-1;i++){
-      realDistance += sqrt(pow(visitedPointsList->at(i+1).x-visitedPointsList->at(i).x,2)+pow(visitedPointsList->at(i+1).y-visitedPointsList->at(i).y,2)+pow(visitedPointsList->at(i+1).z-visitedPointsList->at(i).z,2));
+      }
+    }
+
+    if(visitedPointsList->size()>0){
+      for(int i=0;i<visitedPointsList->size()-1;i++){
+        realDistance += sqrt(pow(visitedPointsList->at(i+1).x-visitedPointsList->at(i).x,2)+pow(visitedPointsList->at(i+1).y-visitedPointsList->at(i).y,2)+pow(visitedPointsList->at(i+1).z-visitedPointsList->at(i).z,2));
+      }
     }
     updateT = ros::Time::now();
     myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << std::endl;
