@@ -97,7 +97,7 @@ int main(int argc, char** argv){
   // initializing ROS everything
   ros::init(argc, argv, "baseline");
   ros::NodeHandle n;
-  ros::Rate r(0.05); // less than 1 is slower
+  ros::Rate r(0.5); // less than 1 is slower
   ros::Time beginT = ros::Time::now();
   ros::Time updateT;
   ros::Subscriber uavIMU_sub = n.subscribe("/ground_truth_to_tf/pose",1,imu_cb);
@@ -229,6 +229,7 @@ int main(int argc, char** argv){
     updateT = ros::Time::now();
     myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << std::endl;
     loopNumber++;
+    r.sleep();
   }
   myfileT.close();
 
