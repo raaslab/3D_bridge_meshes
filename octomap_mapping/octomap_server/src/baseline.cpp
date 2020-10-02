@@ -47,6 +47,8 @@ std::vector<double> tempzFilteredSize;
 octomap::OcTree* fullOcTree = new octomap::OcTree(resolution);
 octomap::OcTree* trimmedOcTree = new octomap::OcTree(resolution);
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
+geometry_msgs::Pose currentPose;
+
 
 
 void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu
@@ -110,6 +112,9 @@ int main(int argc, char** argv){
   float sizeOfUAV = 1.0;
   float minRadius = 2;
   float maxRadius = 5;
+  octomap::OcTree::leaf_iterator it;
+  octomap::OcTree::leaf_iterator endLeaf;
+  int id4Markers;
 
   while (ros::ok()){
     ros::spinOnce();

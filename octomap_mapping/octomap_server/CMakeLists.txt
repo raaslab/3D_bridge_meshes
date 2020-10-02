@@ -95,6 +95,9 @@ target_link_libraries(markers ${catkin_LIBRARIES})
 add_executable(visitedPoints_Publisher src/visitedPoints_Publisher.cpp)
 target_link_libraries(visitedPoints_Publisher ${PROJECT_NAME} ${LINK_LIBS})
 
+add_executable(baseline src/baseline.cpp)
+target_link_libraries(baseline ${PROJECT_NAME} ${LINK_LIBS})
+
 # install targets:
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_color
   octomap_server_node
