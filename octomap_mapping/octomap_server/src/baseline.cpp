@@ -115,8 +115,10 @@ int main(int argc, char** argv){
   octomap::OcTree::leaf_iterator it;
   octomap::OcTree::leaf_iterator endLeaf;
   int id4Markers;
+  int loopNumber = 0;
 
   while (ros::ok()){
+    ROS_INFO("Loop: %d", loopNumber);
     ros::spinOnce();
     // initializing variables
     id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0;
@@ -226,6 +228,7 @@ int main(int argc, char** argv){
     }
     updateT = ros::Time::now();
     myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << std::endl;
+    loopNumber++;
   }
   myfileT.close();
 
