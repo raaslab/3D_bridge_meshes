@@ -143,7 +143,6 @@ int main(int argc, char** argv){
       }
       id4Markers = id4Markers + 1;
     }
-    updateT = ros::Time::now();
 
     // creating point clouds for free, occupied, and unknown voxels for full point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudFreeFull (new pcl::PointCloud<pcl::PointXYZ>);
