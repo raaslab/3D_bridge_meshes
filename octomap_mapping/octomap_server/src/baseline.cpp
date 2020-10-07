@@ -118,15 +118,24 @@ int main(int argc, char** argv){
   octomap::OcTree::leaf_iterator endLeaf;
   int id4Markers;
   int loopNumber = 0;
+  float xMin = -18;
+  float xMax = 20;
+  float yMin = -7;
+  float yMax = 17;
+  float zMin = 0.2;
+  float zMax = 10;
 
   while (ros::ok()){
     ROS_INFO("Loop: %d", loopNumber);
     ros::spinOnce();
     // initializing variables
-    id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0;
+    id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0; int allCountOccInBounds = 0;
     // getting sizes of free, occupied, and unknown for full octree
     for(it = fullOcTree->begin_leafs(),endLeaf = fullOcTree->end_leafs();it!=endLeaf;++it){
       if(it->getValue()>thresholdOcc){
+        if(xMin<it.getX()<xMax && yMin<it.getY()<yMax && zMin<it.getZ()<zMax){
+          allCountOccInBounds++;
+        }
         countOccFull = countOccFull + 1;
       } else if(it->getValue()<thresholdFree){
         countFreeFull = countFreeFull + 1;
@@ -246,7 +255,7 @@ int main(int argc, char** argv){
       }
     }
     updateT = ros::Time::now();
-    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << std::endl;
+    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << allCountOccInBounds << std::endl;
     myfileBLD << updateT-beginT<<","<<realDistance<<std::endl;
     loopNumber++;
     r.sleep();

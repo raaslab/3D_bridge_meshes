@@ -202,6 +202,13 @@ int main(int argc, char** argv){
   myfile<<"minRadius: "<<minRadius<<std::endl;
   myfile<<"maxRadius: "<<maxRadius<<std::endl;
   myfile<<"sizeOfUAV: "<<sizeOfUAV<<std::endl;
+  float xMin = -18;
+  float xMax = 20;
+  float yMin = -7;
+  float yMax = 17;
+  float zMin = 0.2;
+  float zMax = 10;
+
 
   visualization_msgs::Marker fullOccupiedMarkers; fullOccupiedMarkers.header.frame_id = "/world"; fullOccupiedMarkers.header.stamp = ros::Time::now(); fullOccupiedMarkers.ns = "occupied_markers_full";
   fullOccupiedMarkers.type = shape; fullOccupiedMarkers.action = visualization_msgs::Marker::ADD;
@@ -291,7 +298,7 @@ int main(int argc, char** argv){
     resetFlag_pub.publish(resetFlag_msg);
     ros::spinOnce();
 // initializing variables
-    id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0; markerSize = 0;
+    id4Markers = 0; int countFreeFull = 0; int countOccFull = 0; int countUnknownFull = 0; markerSize = 0; int allCountOccInBounds = 0;
 // getting sizes of free, occupied, and unknown for full octree
     for(it = fullOcTree->begin_leafs(),endLeaf = fullOcTree->end_leafs();it!=endLeaf;++it){
       markerSize = it.getSize();
@@ -301,6 +308,9 @@ int main(int argc, char** argv){
         fullOccupiedMarkers.scale.x = markerSize; fullOccupiedMarkers.scale.y = markerSize; fullOccupiedMarkers.scale.z = markerSize;
         occArrayFull.markers.push_back(fullOccupiedMarkers);
         countOccFull = countOccFull + 1;
+        if(xMin<it.getX()<xMax && yMin<it.getY()<yMax && zMin<it.getZ()<zMax){
+          allCountOccInBounds++;
+        }
       } else if(it->getValue()<thresholdFree){
         fullFreeMarkers.pose.position.x = it.getX(); fullFreeMarkers.pose.position.y = it.getY(); fullFreeMarkers.pose.position.z = it.getZ();
         fullFreeMarkers.id = id4Markers;
@@ -340,7 +350,7 @@ int main(int argc, char** argv){
       id4Markers = id4Markers + 1;
     }
     updateT = ros::Time::now();
-    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << std::endl;
+    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << allCountOccInBounds << std::endl;
 
 // creating point clouds for free, occupied, and unknown voxels for full point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudFreeFull (new pcl::PointCloud<pcl::PointXYZ>);
