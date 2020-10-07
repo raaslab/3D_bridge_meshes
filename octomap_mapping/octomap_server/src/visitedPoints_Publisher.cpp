@@ -25,7 +25,7 @@ void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu
 
 int main(int argc, char **argv){
   std::ofstream myfile;
-  myfile.open("/home/klyu/bridgeInspection/realDistance.txt");
+  myfile.open("/home/klyu/bridgeInspection/realDistance.csv");
   ros::init(argc, argv, "visitedPointPublisher");
   ros::NodeHandle n;
   ros::Publisher pointList_pub = n.advertise<pcl::PointCloud<pcl::PointXYZ>> ("/visited_point_list",1,true);
