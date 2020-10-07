@@ -42,7 +42,7 @@
 
 
 // global variables
-int resolution = 1;
+int resolution = 1; // need to change this in the launch file to have an affect
 octomap::OcTree* fullOcTree = new octomap::OcTree(resolution);
 octomap::OcTree* trimmedOcTree = new octomap::OcTree(resolution);
 int countCB = 0;
@@ -63,7 +63,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl
 std::vector<double> tempzFilteredSize;
 std_msgs::Float64 resetFlag_msg;
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
-int replanningTime = 60;
+int replanningTime = 60; // replanning time
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
