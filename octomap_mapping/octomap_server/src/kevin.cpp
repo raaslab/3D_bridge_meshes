@@ -63,6 +63,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl
 std::vector<double> tempzFilteredSize;
 std_msgs::Float64 resetFlag_msg;
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
+int replanningTime = 60;
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
@@ -507,7 +508,7 @@ int main(int argc, char** argv){
       }
 
       ROS_INFO("\nStart index in tour: %d\nStart point in tour: %d",currentPointNumber,tour[currentPointNumber]);
-      while(elapsed.sec<60 && !tspDone){
+      while(elapsed.sec<replanningTime && !tspDone){
         resetFlag_msg.data=0;
         resetFlag_pub.publish(resetFlag_msg);
         // goal point for moveit
