@@ -24,6 +24,8 @@ void imu_cb(const geometry_msgs::PoseStamped& msg){ // imu
 }
 
 int main(int argc, char **argv){
+  std::ofstream myfile;
+  myfile.open("/home/klyu/bridgeInspection/realDistance.txt");
   ros::init(argc, argv, "visitedPointPublisher");
   ros::NodeHandle n;
   ros::Publisher pointList_pub = n.advertise<pcl::PointCloud<pcl::PointXYZ>> ("/visited_point_list",1,true);
@@ -36,6 +38,7 @@ int main(int argc, char **argv){
   while (ros::ok()){
     ros::spinOnce();
     ROS_INFO("while loop: %d", count);
+    myfile<<ros::Time::now()<<","<<currentPose.position.x<<","<<currentPose.position.y<<","<<currentPose.position.z<<std::endl;
     visitedPointsList->width = count+1; visitedPointsList->height = 1; visitedPointsList->points.resize (visitedPointsList->width * visitedPointsList->height);
     if(!rF){ // adding points
       visitedPointsList->points[count].x = currentPose.position.x; visitedPointsList->points[count].y = currentPose.position.y; visitedPointsList->points[count].z = currentPose.position.z;

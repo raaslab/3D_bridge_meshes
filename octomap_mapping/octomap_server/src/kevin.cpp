@@ -198,6 +198,7 @@ int main(int argc, char** argv){
   pcl::PointXYZ searchPoint2;
   octomap::OcTree::leaf_iterator it;
   octomap::OcTree::leaf_iterator endLeaf;
+  myfile<<"startTime: "<<ros::Time::now()<<std::endl;
   myfile<<"minRadius: "<<minRadius<<std::endl;
   myfile<<"maxRadius: "<<maxRadius<<std::endl;
   myfile<<"sizeOfUAV: "<<sizeOfUAV<<std::endl;
