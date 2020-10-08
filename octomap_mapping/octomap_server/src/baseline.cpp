@@ -118,10 +118,10 @@ int main(int argc, char** argv){
   octomap::OcTree::leaf_iterator endLeaf;
   int id4Markers;
   int loopNumber = 0;
-  float xMin = -15;
-  float xMax = 15;
-  float yMin = -1;
-  float yMax = 11;
+  float xMin = -16;
+  float xMax = 16;
+  float yMin = -2;
+  float yMax = 12;
   float zMin = 0.2;
   float zMax = 10;
 
