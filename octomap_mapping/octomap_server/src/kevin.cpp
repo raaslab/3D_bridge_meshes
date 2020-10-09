@@ -203,10 +203,10 @@ int main(int argc, char** argv){
   myfile<<"minRadius: "<<minRadius<<std::endl;
   myfile<<"maxRadius: "<<maxRadius<<std::endl;
   myfile<<"sizeOfUAV: "<<sizeOfUAV<<std::endl;
-  float xMin = -14;
-  float xMax = 14;
-  float yMin = 0;
-  float yMax = 10;
+  float xMin = -17;
+  float xMax = 17;
+  float yMin = -3;
+  float yMax = 13;
   float zMin = 0.2;
   float zMax = 10;
 
