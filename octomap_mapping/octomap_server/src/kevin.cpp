@@ -52,7 +52,6 @@ float xData=0.0;
 float yData=0.0;
 float zData=0.0;
 int positionCount = 0;
-float checkDistance = 5; // the allowed difference in the expected distance and actual distance
 std::vector<int> tour;
 double moveit_distance = -1;
 bool tour_ready = false;
@@ -63,6 +62,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloudOccTrimmed (new pcl::PointCloud<pcl
 std::vector<double> tempzFilteredSize;
 std_msgs::Float64 resetFlag_msg;
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
+
+float checkDistance = 5; // the allowed difference in the expected distance and actual distance
 int replanningTime = 60; // replanning time
 
 
