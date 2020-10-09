@@ -63,7 +63,7 @@ std::vector<double> tempzFilteredSize;
 std_msgs::Float64 resetFlag_msg;
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
 
-float checkDistance = 10; // the allowed difference in the expected distance and actual distance
+float checkDistance = 15; // the allowed difference in the expected distance and actual distance
 int replanningTime = 90; // replanning time
 
 
