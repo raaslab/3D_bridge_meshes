@@ -528,17 +528,17 @@ int main(int argc, char** argv){
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
         goal.goal_pose.position.z = clusteredPoints->points[tour[currentPointNumber]-1].z;
         goal_distance_publisher.publish(goal.goal_pose.position);
-        ROS_INFO("Before forever while loop");
         while(!length_ready){
-          if(length_ready == -1){
-            break;
-          }
           ros::spinOnce();
           distanceSleep.sleep();
         }
-        ROS_INFO("After forever while loop");
         float tempDistance = moveit_distance;
-        if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
+        if(moveit_distance == -1){ // if moveit couldn't find a path replan
+          resetFlag_msg.data=1;
+          resetFlag_pub.publish(resetFlag_msg);
+          break;
+        }
+        if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){ // if the distances are too different replan
           resetFlag_msg.data=1;
           resetFlag_pub.publish(resetFlag_msg);
           ROS_INFO("moveit distance was too different from euclidean differance.");
