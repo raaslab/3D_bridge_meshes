@@ -530,6 +530,9 @@ int main(int argc, char** argv){
         goal_distance_publisher.publish(goal.goal_pose.position);
         ROS_INFO("Before forever while loop");
         while(!length_ready){
+          if(length_ready == -1){
+            break;
+          }
           ros::spinOnce();
           distanceSleep.sleep();
         }
