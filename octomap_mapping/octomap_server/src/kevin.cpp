@@ -528,10 +528,12 @@ int main(int argc, char** argv){
         goal.goal_pose.position.y = clusteredPoints->points[tour[currentPointNumber]-1].y;
         goal.goal_pose.position.z = clusteredPoints->points[tour[currentPointNumber]-1].z;
         goal_distance_publisher.publish(goal.goal_pose.position);
+        ROS_INFO("Before forever while loop");
         while(!length_ready){
           ros::spinOnce();
           distanceSleep.sleep();
         }
+        ROS_INFO("After forever while loop");
         float tempDistance = moveit_distance;
         if(moveit_distance-sqrt(pow(goal.goal_pose.position.x-currentPose.position.x,2)+pow(goal.goal_pose.position.y-currentPose.position.y,2)+pow(goal.goal_pose.position.z-currentPose.position.z,2))>checkDistance){
           resetFlag_msg.data=1;
@@ -602,6 +604,7 @@ int main(int argc, char** argv){
             }
           }
         }
+        ROS_INFO("After visitedPointsList check");
         compT_endFlight = ros::Time::now();
         myfileCompTime<<loopNumber<<","<<compT_endAlgo-compT_begin<<","<<compT_endGTSP-compT_endAlgo<<","<<compT_endFlight-compT_endGTSP<<std::endl;
         for(int i=0;i<visitedPointsList->size()-1;i++){
