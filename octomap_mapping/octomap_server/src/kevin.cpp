@@ -531,6 +531,7 @@ int main(int argc, char** argv){
         goal_distance_publisher.publish(goal.goal_pose.position);
         while(!length_ready){
           ros::spinOnce();
+          ROS_INFO("%d", ros::Time::now());
           distanceSleep.sleep();
         }
         ROS_INFO("after length_ready while loop");
