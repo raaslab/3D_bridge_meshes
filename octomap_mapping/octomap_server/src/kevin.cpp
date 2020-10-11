@@ -616,6 +616,7 @@ int main(int argc, char** argv){
         myfileDR<<updateT-beginT<<","<<realDistance<<std::endl;
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
+        ROS_INFO("After resetFlag published");
       }
     }
 
