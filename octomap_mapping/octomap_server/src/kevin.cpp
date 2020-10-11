@@ -521,6 +521,7 @@ int main(int argc, char** argv){
 
       ROS_INFO("\nStart index in tour: %d\nStart point in tour: %d",currentPointNumber,tour[currentPointNumber]);
       while(elapsed.sec<replanningTime && !tspDone){
+        ROS_INFO("UAV flight");
         resetFlag_msg.data=0;
         resetFlag_pub.publish(resetFlag_msg);
         // goal point for moveit
@@ -532,6 +533,7 @@ int main(int argc, char** argv){
           ros::spinOnce();
           distanceSleep.sleep();
         }
+        ROS_INFO("after length_ready while loop");
         float tempDistance = moveit_distance;
         if(moveit_distance == -1){ // if moveit couldn't find a path replan
           resetFlag_msg.data=1;
