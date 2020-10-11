@@ -64,7 +64,7 @@ std_msgs::Float64 resetFlag_msg;
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
 
 float checkDistance = 5; // the allowed difference in the expected distance and actual distance
-int replanningTime = 120; // replanning time
+int replanningTime = 150; // replanning time
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
