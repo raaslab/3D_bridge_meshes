@@ -63,8 +63,8 @@ std::vector<double> tempzFilteredSize;
 std_msgs::Float64 resetFlag_msg;
 pcl::PointCloud<pcl::PointXYZ>::Ptr visitedPointsList (new pcl::PointCloud<pcl::PointXYZ>);
 
-float checkDistance = 25; // the allowed difference in the expected distance and actual distance
-int replanningTime = 90; // replanning time
+float checkDistance = 5; // the allowed difference in the expected distance and actual distance
+int replanningTime = 60; // replanning time
 
 
 void tourCallback(const gtsp::Tour::ConstPtr& msg){
@@ -531,10 +531,8 @@ int main(int argc, char** argv){
         goal_distance_publisher.publish(goal.goal_pose.position);
         while(!length_ready){
           ros::spinOnce();
-          ROS_INFO("in while");
           distanceSleep.sleep();
         }
-        ROS_INFO("after length_ready while loop");
         float tempDistance = moveit_distance;
         if(moveit_distance == -1){ // if moveit couldn't find a path replan
           resetFlag_msg.data=1;
@@ -610,7 +608,6 @@ int main(int argc, char** argv){
             }
           }
         }
-        ROS_INFO("After visitedPointsList check");
         compT_endFlight = ros::Time::now();
         myfileCompTime<<loopNumber<<","<<compT_endAlgo-compT_begin<<","<<compT_endGTSP-compT_endAlgo<<","<<compT_endFlight-compT_endGTSP<<std::endl;
         for(int i=0;i<visitedPointsList->size()-1;i++){
@@ -619,7 +616,6 @@ int main(int argc, char** argv){
         myfileDR<<updateT-beginT<<","<<realDistance<<std::endl;
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
-        ROS_INFO("After resetFlag published");
       }
     }
 
