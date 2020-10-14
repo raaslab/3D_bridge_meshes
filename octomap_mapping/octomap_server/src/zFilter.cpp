@@ -17,7 +17,7 @@ int resolution = 1;
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOccFull (new pcl::PointCloud<pcl::PointXYZ>);
 visualization_msgs::MarkerArray zFiltered;
 uint32_t shape = visualization_msgs::Marker::CUBE;
-float trimmedHeight = 3; // 3 is standard
+float trimmedHeight = 1; // 3 is standard
 std::vector<double> outputVector;
 std_msgs::Float64MultiArray outputSize;
 
