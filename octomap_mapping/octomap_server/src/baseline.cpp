@@ -197,6 +197,8 @@ int main(int argc, char** argv){
         zFilteredSize.push_back(tempzFilteredSize.at(j));
       }
     }
+    updateT = ros::Time::now();
+    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << tempCloudOccTrimmed->size()-runningVisitedVoxels->size()<<","<< countOccFull-tempCloudOccTrimmed->size() << ","<< countFreeFull << std::endl;
 
     float tempX1; float tempY1; float tempZ1; float tempX2; float tempY2; float tempZ2;
     pcl::PointCloud<pcl::PointXYZ>::Ptr tempPoints (new pcl::PointCloud<pcl::PointXYZ>);
@@ -255,7 +257,7 @@ int main(int argc, char** argv){
       }
     }
     updateT = ros::Time::now();
-    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << allCountOccInBounds << std::endl;
+    // myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << allCountOccInBounds << std::endl;
     myfileBLD << updateT-beginT<<","<<realDistance<<std::endl;
     loopNumber++;
     r.sleep();
