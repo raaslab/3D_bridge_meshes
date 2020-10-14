@@ -30,7 +30,6 @@ void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 	octomap::OcTree::leaf_iterator endLeaf;
 	visualization_msgs::Marker zFilteredMarkers; zFilteredMarkers.header.frame_id = "/world"; zFilteredMarkers.header.stamp = ros::Time::now(); zFilteredMarkers.ns = "free_markers_trimmed";
 	zFilteredMarkers.type = shape; zFilteredMarkers.action = visualization_msgs::Marker::ADD;
-	zFilteredMarkers.color.r = 0.0f; zFilteredMarkers.color.g = 1.0f; zFilteredMarkers.color.b = 0.0f; zFilteredMarkers.color.a = 1.0;
 	int id4Markers = 0; int markerSize = 1; int sizeOfCloud = 0;
 
 	for(it = trimmedOcTree->begin_leafs(),endLeaf = trimmedOcTree->end_leafs();it!=endLeaf;++it){
@@ -51,6 +50,15 @@ void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 				zFilteredMarkers.pose.position.x = it.getX(); zFilteredMarkers.pose.position.y = it.getY(); zFilteredMarkers.pose.position.z = it.getZ();
 				zFilteredMarkers.id = id4Markers;
 				zFilteredMarkers.scale.x = markerSize; zFilteredMarkers.scale.y = markerSize; zFilteredMarkers.scale.z = markerSize;
+				if(it.getZ()>5){
+					zFilteredMarkers.color.r = 1.0f; zFilteredMarkers.color.g = 0.0f; zFilteredMarkers.color.b = 0.0f; zFilteredMarkers.color.a = 1.0;
+				}
+				else if(it.getZ()>3){
+					zFilteredMarkers.color.r = 0.0f; zFilteredMarkers.color.g = 1.0f; zFilteredMarkers.color.b = 0.0f; zFilteredMarkers.color.a = 1.0;
+				}
+				else{
+					zFilteredMarkers.color.r = 0.0f; zFilteredMarkers.color.g = 0.0f; zFilteredMarkers.color.b = 1.0f; zFilteredMarkers.color.a = 1.0;
+				}
 				zFiltered.markers.push_back(zFilteredMarkers);
 				id4Markers++;
 			}
