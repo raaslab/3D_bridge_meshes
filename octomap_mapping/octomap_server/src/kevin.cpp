@@ -350,8 +350,6 @@ int main(int argc, char** argv){
       }
       id4Markers = id4Markers + 1;
     }
-    updateT = ros::Time::now();
-    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << allCountOccInBounds << std::endl;
 
 // creating point clouds for free, occupied, and unknown voxels for full point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudFreeFull (new pcl::PointCloud<pcl::PointXYZ>);
@@ -396,6 +394,8 @@ int main(int argc, char** argv){
         zFilteredSize.push_back(tempzFilteredSize.at(j));
       }
     }
+    updateT = ros::Time::now();
+    myfileT << updateT-beginT << "," << runningVisitedVoxels->size() << "," << tempCloudOccTrimmed->size()-runningVisitedVoxels->size()<<","<< countOccFull-tempCloudOccTrimmed->size() << ","<< countFreeFull << std::endl;
     std::cout<<"size after removing running visited from trimmed point cloud: " << cloudOccTrimmed->size() << std::endl;
     std::cout<<"size of zFilteredSize: " <<zFilteredSize.size()<<std::endl;
 
