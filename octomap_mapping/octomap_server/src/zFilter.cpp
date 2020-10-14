@@ -50,10 +50,10 @@ void trimmed_cb(const octomap_msgs::Octomap& input){ // occupancy tree call back
 				zFilteredMarkers.pose.position.x = it.getX(); zFilteredMarkers.pose.position.y = it.getY(); zFilteredMarkers.pose.position.z = it.getZ();
 				zFilteredMarkers.id = id4Markers;
 				zFilteredMarkers.scale.x = markerSize; zFilteredMarkers.scale.y = markerSize; zFilteredMarkers.scale.z = markerSize;
-				if(it.getZ()>5){
+				if(it.getZ()>4){
 					zFilteredMarkers.color.r = 1.0f; zFilteredMarkers.color.g = 0.0f; zFilteredMarkers.color.b = 0.0f; zFilteredMarkers.color.a = 1.0;
 				}
-				else if(it.getZ()>3){
+				else if(it.getZ()>1.9){
 					zFilteredMarkers.color.r = 0.0f; zFilteredMarkers.color.g = 1.0f; zFilteredMarkers.color.b = 0.0f; zFilteredMarkers.color.a = 1.0;
 				}
 				else{
