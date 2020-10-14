@@ -142,7 +142,7 @@ int main(int argc, char** argv){
   myfileCompTime.open("/home/klyu/bridgeInspection/timeVSComputationalTime.csv");
   std::ofstream myfileDR; // real distance
   myfileDR.open("/home/klyu/bridgeInspection/timeVSDistanceReal.csv");
-  myfileT << updateT-beginT << "," << "Inspected Bridge" << "," << "Not Inspected Bridge"<<","<< "NonBridge" << ","<< "Free" << std::endl;
+
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
   actionlib::SimpleActionClient<hector_moveit_navigation::NavigationAction> ac("hector_navigator", true);
@@ -150,7 +150,7 @@ int main(int argc, char** argv){
   ros::Rate r(0.05); // less than 1 is slower
   ros::Rate distanceSleep(10);
   ros::Time beginT = ros::Time::now();
-  ros::Time updateT;
+  ros::Time updateT = ros::Time::now();
   ros::Time compT_begin;
   ros::Time compT_endAlgo;
   ros::Time compT_endGTSP;
@@ -174,6 +174,8 @@ int main(int argc, char** argv){
   ros::Subscriber zFiltered_sub = n.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/zFiltered",1,zFiltered_cb);
   ros::Subscriber zFilteredSize_sub = n.subscribe("/zFilteredSize", 1, zFilteredSize_cb);
   ros::Subscriber visitedPointList_sub = n.subscribe("/visited_point_list", 1, visitedPointList_cb);
+
+  myfileT << updateT-beginT << "," << "Inspected Bridge" << "," << "Not Inspected Bridge"<<","<< "NonBridge" << ","<< "Free" << std::endl;
 
 // initializing arrays
   pcl::PointXYZ searchPoint;
