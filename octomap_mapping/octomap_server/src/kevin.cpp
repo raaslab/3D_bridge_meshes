@@ -142,7 +142,7 @@ int main(int argc, char** argv){
   myfileCompTime.open("/home/klyu/bridgeInspection/timeVSComputationalTime.csv");
   std::ofstream myfileDR; // real distance
   myfileDR.open("/home/klyu/bridgeInspection/timeVSDistanceReal.csv");
-
+  myfileT << updateT-beginT << "," << "Inspected Bridge" << "," << "Not Inspected Bridge"<<","<< "NonBridge" << ","<< "Free" << std::endl;
 // initializing ROS everything
   ros::init(argc, argv, "kevin");
   actionlib::SimpleActionClient<hector_moveit_navigation::NavigationAction> ac("hector_navigator", true);
