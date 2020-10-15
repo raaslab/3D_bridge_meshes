@@ -40,6 +40,7 @@
 
 #define MAX_TOUR_SIZE 25
 
+// random comment here
 
 // global variables
 int resolution = 1; // need to change this in the launch file to have an affect
