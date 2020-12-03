@@ -3,9 +3,9 @@
 This work aims to provide UAV flight in an unknown 3D environment for infrastructure inspection. This work is presented at [this arXiv location]().
 <!--Add this arXiv link-->
 
-### Current perception version - Perception V1
+<!-- ### Current perception version - Perception V1 -->
 
-![](ICRA_2021_3D_Bridge_BlockDiagram.png)
+![](ICRA_2021_3D_Bridge_Block_Diagram.png)
 
 <!-- **Note** The red lines indicate rostopic names -->
 
