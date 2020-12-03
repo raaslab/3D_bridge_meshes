@@ -53,28 +53,28 @@ roslaunch pcl_filter cloud_pub.launch
 ### Running all code
 ## Environments
 To launch an environment launch the following line of code:
-'roslaunch hector_moveit_gazebo final_bridge.launch'
+`roslaunch hector_moveit_gazebo final_bridge.launch`
 
 To launch filters for LiDAR and RGB camera:
-'roslaunch pcl_filter cloud_pub.launch'
-'rosrun octomap_server zFilter'
+`roslaunch pcl_filter cloud_pub.launch`
+`rosrun octomap_server zFilter`
 
 To launch low-level controller:
 Either autonomous flight can be done using
-'roslaunch hector_moveit_navigation navigate.launch'
+`roslaunch hector_moveit_navigation navigate.launch`
 
 or if you want to do manual flight
-'rosservice call /enable_motors true'
-'rosrun teleop_twist_keyboard teleop_twist_keyboard.py'
+`rosservice call /enable_motors true`
+`rosrun teleop_twist_keyboard teleop_twist_keyboard.py`
 
 To run GTSP solver:
 `rosrun gtsp gtsp_solver`
 
 To run baseline for GATSBI algorithm:
-'rosrun octomap_server baseline'
+`rosrun octomap_server baseline`
 
 To run GATSBI algorithm:
-'rosrun octomap_server kevin'
+`rosrun octomap_server kevin`
 
 To plot path of UAV:
-'rosrun hector_trajectory_server hector_trajectory_server'
+`rosrun hector_trajectory_server hector_trajectory_server`
