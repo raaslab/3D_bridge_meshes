@@ -9,6 +9,8 @@ This work aims to provide UAV flight in an unknown 3D environment for infrastruc
 
 <!-- **Note** The red lines indicate rostopic names -->
 
+## How to Install
+Add information on how to install everything to get it to work.
 
 #### Run Instructions
 First download rosbag(simulation_v1.bag) from [here](https://drive.google.com/file/d/1f-OXbnUOXiB1iEFGs9W5oXcsnhm74dib/view?usp=sharing)
@@ -19,10 +21,6 @@ catkin_make
 rosbag play <path to rosbag> -r 0.1
 roslaunch pcl_filter cloud_pub.launch
 ```
-
-
-
-
 
 ### Package setups
 
