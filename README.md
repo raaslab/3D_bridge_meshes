@@ -68,7 +68,7 @@ or if you want to do manual flight
 'rosrun teleop_twist_keyboard teleop_twist_keyboard.py'
 
 To run GTSP solver:
-'rosrun gtsp gtsp_solver'
+`rosrun gtsp gtsp_solver`
 
 To run baseline for GATSBI algorithm:
 'rosrun octomap_server baseline'
