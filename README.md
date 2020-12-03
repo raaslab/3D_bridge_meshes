@@ -1,15 +1,13 @@
 
-# 3D_bridge_meshes
-Creating 3D meshes with UAVs. This project aims to combine 3D mesh construction using fundamantal practices with infrastructure inspection using novel navigation methods.
-
-
-
+# GATSBI: An Online GTSP-Based Algorithm for Targeted Surface Bridge Inspection
+This work aims to provide UAV flight in an unknown 3D environment for infrastructure inspection. This work is presented at [this arXiv location]().
+<!--Add this arXiv link-->
 
 ### Current perception version - Perception V1
 
-![](pipeline.png)
+![](ICRA_2021_3D_Bridge_BlockDiagram.png)
 
-**Note** The red lines indicate rostopic names
+<!-- **Note** The red lines indicate rostopic names -->
 
 
 #### Run Instructions
@@ -51,7 +49,6 @@ roslaunch pcl_filter cloud_pub.launch
 
 
 ### Running all code
-## Environments
 To launch an environment launch the following line of code:
 
 `roslaunch hector_moveit_gazebo final_bridge.launch`
