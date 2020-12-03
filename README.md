@@ -55,8 +55,10 @@ To launch an environment launch the following line of code:
 
 To launch filters for LiDAR and RGB camera:
 
-`roslaunch pcl_filter cloud_pub.launch`
-`rosrun octomap_server zFilter`
+```
+roslaunch pcl_filter cloud_pub.launch
+rosrun octomap_server zFilter
+```
 
 To launch low-level controller:
 Either autonomous flight can be done using
@@ -65,8 +67,10 @@ Either autonomous flight can be done using
 
 or if you want to do manual flight
 
-`rosservice call /enable_motors true`
-`rosrun teleop_twist_keyboard teleop_twist_keyboard.py`
+```
+rosservice call /enable_motors true
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+```
 
 To run GTSP solver:
 
