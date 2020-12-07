@@ -74,6 +74,10 @@ To run GTSP solver:
 
 `rosrun gtsp gtsp_solver`
 
+To run visited points publisher:
+
+`rosrun octomap_server visitedPoints_Publisher`
+
 To run baseline for GATSBI algorithm:
 
 `rosrun octomap_server baseline`

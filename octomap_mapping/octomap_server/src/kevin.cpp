@@ -579,17 +579,20 @@ int main(int argc, char** argv){
           ac.cancelAllGoals();
           ROS_INFO("Action did not finish before the time out.");
         }
+        ROS_INFO("test1");
         if(currentPointNumber >= tour.size()-1){ // check if the current tour point is the last one and loop
           currentPointNumber = 0;
         } else{
           currentPointNumber++;
         }
+        ROS_INFO("test2");
         if(tour.size()-1 == countMoveit){ // check if all tour points have been visited
           tspDone = true;
         } else{
           countMoveit++;
           elapsed = ros::Time::now()-startTime;
         }
+        ROS_INFO("test3");
         ros::spinOnce();
         float realDistance = 0;
         bool found;
@@ -611,15 +614,22 @@ int main(int argc, char** argv){
             }
           }
         }
+        ROS_INFO("test4");
         compT_endFlight = ros::Time::now();
         myfileCompTime<<loopNumber<<","<<compT_endAlgo-compT_begin<<","<<compT_endGTSP-compT_endAlgo<<","<<compT_endFlight-compT_endGTSP<<std::endl;
+        ROS_INFO("test7");
         for(int i=0;i<visitedPointsList->size()-1;i++){
+          ROS_INFO("test9");
           realDistance += sqrt(pow(visitedPointsList->at(i+1).x-visitedPointsList->at(i).x,2)+pow(visitedPointsList->at(i+1).y-visitedPointsList->at(i).y,2)+pow(visitedPointsList->at(i+1).z-visitedPointsList->at(i).z,2));
+          ROS_INFO("test10");
         }
+        ROS_INFO("test8");
         myfileDR<<updateT-beginT<<","<<realDistance<<std::endl;
         resetFlag_msg.data=1;
         resetFlag_pub.publish(resetFlag_msg);
+        ROS_INFO("test6");
       }
+      ROS_INFO("test5");
     }
 
     std::cout<<std::endl;
