@@ -96,4 +96,4 @@ To plot path of UAV:
   b. quality guarantees of inspection images
 2. Add frontier exploration if no bridge voxels are seen
 3. improve bridge segmentation
-4. improve UAV point to ponit flight
+4. improve UAV point to point flight
