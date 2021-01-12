@@ -8,9 +8,10 @@ std::vector<(x,y,z,sidesWONO)> uninspectedT = {}; // uninspected transition voxl
 
 // Add starting position to inspected
 inspected.push_back();
-
-// Add all visible neighbors to uninspected
+// Add all visible neighbors to uninspectedN and uninspectedT
 uninspectedN.push_back();
+uninspectedT.push_back();
+
 
 while(uninspectedN || uninspectedT){
   while(uninspectedN){ // while there are uninspected neighbors
@@ -37,5 +38,8 @@ while(uninspectedN || uninspectedT){
   }
   // Add new neighbors that are found
   uninspectedN.push_back();
+  uninspectedT.push_back();
+
+  // TODO: need to figure out exactly how we add to uninspectedT. Should not add sidesWONO if transitioned from.
 
 }
