@@ -23,6 +23,7 @@ while(uninspectedN || uninspectedT){
     uninspectedN.push_back();
     // Add voxels that have all neighbors inspected, but may have a transition side
     uninspectedT.push_back();
+    // TODO: add checker for inspected voxels if they correspond to one within the uninspectedT so we can remove them from uninspectedT
   }
 
   // Find nearest uninspectedT
