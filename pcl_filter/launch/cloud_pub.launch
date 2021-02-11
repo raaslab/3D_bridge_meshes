@@ -22,6 +22,8 @@
         <!-- output="screen" /> -->
   <!-- <node pkg="pcl_filter" name="register_multiple_velo" type="register_multiple_velo" -->
         <!-- output="screen" /> -->
+	
+  <!-- trimmed octomap server -->
   <node pkg="octomap_server" type="octomap_server_node_trimmed" name="octomap_server_trimmed">
 	<param name="resolution" value="2" /> <!-- resolution 2 -->
 
@@ -35,6 +37,8 @@
 	<remap from="cloud_in" to="transformed_cloud_image_frame" />
 
   </node>
+	
+  <!-- velodyne point cloud transformation to octomap -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server_velo">
 	<param name="resolution" value="1" />z
 
