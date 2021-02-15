@@ -51,6 +51,11 @@ To launch an environment launch the following line of code:
 
 `roslaunch hector_moveit_gazebo final_bridge.launch`
 
+Python code
+
+`python3 image_server.py`
+`python get_image.py`
+
 To launch filters for LiDAR and RGB camera:
 
 ```
