@@ -26,8 +26,9 @@ connection = client_socket.makefile('wb')
 # Instantiate CvBridge
 bridge = CvBridge()
 
-img_counter = 0
+
 def image_callback(msg):
+    img_counter = 0
     print("Received an image!")
     try:
         # Convert your ROS Image message to OpenCV2
