@@ -51,10 +51,18 @@ To launch an environment launch the following line of code:
 
 `roslaunch hector_moveit_gazebo final_bridge.launch`
 
-Python code
+Python code:
 
-`python3 image_server.py`
-`python get_image.py`
+```
+python3 image_server.py
+python get_image.py
+```
+
+Segmentation code: This code is found in the deep_lab_v3material_detection github.
+
+```
+python3 deepLab.py
+```
 
 To launch filters for LiDAR and RGB camera:
 
