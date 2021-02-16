@@ -1,4 +1,4 @@
-#! /usr/bin/python
+# /usr/bin/python
 # Copyright (c) 2015, Rethink Robotics, Inc.
 
 # Using this CvBridge Tutorial for converting
