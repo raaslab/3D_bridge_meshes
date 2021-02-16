@@ -58,7 +58,7 @@ python3 image_server.py
 python get_image.py
 ```
 
-Segmentation code: This code is found in the deep_lab_v3material_detection github.
+Segmentation code: This code is found in the deep_lab_v3material_detection github. [Repo](https://github.com/Yu-Projects/deep_lab_v3_material_detection)
 
 ```
 python3 deepLab.py
