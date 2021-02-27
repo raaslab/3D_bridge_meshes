@@ -86,8 +86,8 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
         // cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(24, 74, 169), b_thresh);
 
         // Only bridge
-        cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 255), g_thresh);
-        // cv::inRange(frame_HSV, cv::Scalar(1, 0, 0), cv::Scalar(180, 31, 136), g_thresh);
+        // cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 255), g_thresh);
+        cv::inRange(frame_HSV, cv::Scalar(110, 50, 50), cv::Scalar(130, 255, 255), g_thresh);
         //Wall Only
         // cv::inRange(frame_HSV, cv::Scalar(0, 0, 118), cv::Scalar(176, 241, 242), g_thresh);
 
