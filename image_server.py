@@ -42,7 +42,7 @@ while True:
     frame=pickle.loads(frame_data, fix_imports=True, encoding="bytes")
     #frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
     cv2.imshow('ImageWindow',frame)
-    cv2.imwrite('../deep_lab_v3_material_detection/bridge_images/test.jpg', frame)
+    cv2.imwrite('../deep_lab_v3_material_detection/bridge_images/test.jpeg', frame,[int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
 
     # cv2.imwrite('../deep_lab_v3_material_detection/bridge_images/test.jpg',frame)

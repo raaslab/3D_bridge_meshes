@@ -58,10 +58,10 @@ python3 image_server.py
 python get_image.py
 ```
 
-Segmentation code: This code is found in the deep_lab_v3material_detection github. [Repo](https://github.com/Yu-Projects/deep_lab_v3_material_detection)
+Segmentation code: This code is found in the simulation_model folder.
 
 ```
-python3 deepLab.py
+python3 run_show_results__.py
 ```
 
 To launch filters for LiDAR and RGB camera:
