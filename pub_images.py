@@ -32,7 +32,7 @@ while True:
         result = np.full((hh,ww,cc),color,dtype = np.uint8)
         xx = (ww - wd) // 2
         yy = (hh - ht) // 2
-        result[yy:yy+ht, xx:xx+wd] = image
+        #result[yy:yy+ht, xx:xx+wd] = image
 
 
         bridge = CvBridge()
