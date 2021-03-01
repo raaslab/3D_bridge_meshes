@@ -24,14 +24,18 @@ while True:
         print(image_path)
         image = cv2.imread(image_path)
         width, height = image.shape[1], image.shape[0]
-        min_ = min(width,height)
-        dim = [min_, min_]
-        ht, wd, cc = image.shape
-        ww = 640
-        hh = 480
-        result = np.full((hh,ww,cc),color,dtype = np.uint8)
-        xx = (ww - wd) // 2
-        yy = (hh - ht) // 2
+        mid_x, mid_y = int(width/2), int(height/2)
+        cw2, ch2 = 640-width, 480-height
+        border = cv2.copyMakeBorder(image,ch2,ch2,cw2,cw2,borderType = cv2.BORDER_CONSTANT, value = [0,0,0])
+        
+        #min_ = min(width,height)
+        #dim = [min_, min_]
+        #ht, wd, cc = image.shape
+        #ww = 640
+        #hh = 480
+        #result = np.full((hh,ww,cc),color,dtype = np.uint8)
+        #xx = (ww - wd) // 2
+        #yy = (hh - ht) // 2
         #result[yy:yy+ht, xx:xx+wd] = image
 
 
