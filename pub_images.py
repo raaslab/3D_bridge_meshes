@@ -27,6 +27,12 @@ while True:
         mid_x, mid_y = int(width/2), int(height/2)
         cw2, ch2 = 640-width, 480-height
         border = cv2.copyMakeBorder(image,0,0,int(cw2/2),int(cw2/2),borderType = cv2.BORDER_CONSTANT, value = [0,0,0])
+        width, height = border.shape[1], border.shape[0]
+        mid_y = int(height/2)
+        borderNew = border[mid_y-ch2:mid_y+ch2,0:width]
+        
+        border = cv2.resize(border,(512,512))
+        borderNew = border
         
         #min_ = min(width,height)
         #dim = [min_, min_]
