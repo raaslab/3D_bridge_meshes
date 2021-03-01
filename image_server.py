@@ -7,6 +7,7 @@ import pickle
 import numpy as np
 import struct ## new
 import zlib
+from filelock import Timeout, FileLock
 
 HOST=''
 PORT=8485
@@ -24,6 +25,7 @@ conn,addr=s.accept()
 data = b""
 payload_size = struct.calcsize(">L")
 print("payload_size: {}".format(payload_size))
+lock = FileLock('../deep_lab_v3_material_detection/bridge_images/test.jpeg.lock')
 while True:
     while len(data) < payload_size:
         print("Recv: {}".format(len(data)))
@@ -41,8 +43,13 @@ while True:
 
     frame=pickle.loads(frame_data, fix_imports=True, encoding="bytes")
     #frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-    cv2.imshow('ImageWindow',frame)
-    cv2.imwrite('../deep_lab_v3_material_detection/bridge_images/test.jpeg', frame,[int(cv2.IMWRITE_JPEG_QUALITY), 100])
+    #cv2.imshow('ImageWindow',frame)
+    try:
+        with lock:
+            print("Writing file")
+            cv2.imwrite('../deep_lab_v3_material_detection/bridge_images/test.jpeg', frame,[int(cv2.IMWRITE_JPEG_QUALITY), 100])
+    except Timeout:
+        print("File Already Locked")
 
 
     # cv2.imwrite('../deep_lab_v3_material_detection/bridge_images/test.jpg',frame)

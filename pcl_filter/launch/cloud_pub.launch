@@ -10,8 +10,9 @@
   <node pkg="pcl_filter" name="odom_pub" type="odom_pub"
         output="screen" /> -->
 
-  <node pkg="pcl_filter" name="transform_cloud_to_cam_frame" type="transform_cloud_to_cam_frame"
-        output="screen" />
+  <node pkg="pcl_filter" name="transform_cloud_to_cam_frame" type="transform_cloud_to_cam_frame" output="screen">
+	<remap from = "/camera/rgb/image_raw" to = "/image_mask" />
+  </node>
 
   <!-- <node pkg="pcl_filter" name="transform_cloud_velo_pub" type="transform_cloud_velo_pub" -->
         <!-- output="screen" /> -->
