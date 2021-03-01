@@ -31,8 +31,8 @@ while True:
         mid_y = int(height/2)
         borderNew = border[mid_y-ch2:mid_y+ch2,0:width]
         
-        border = cv2.resize(border,(512,512))
-        borderNew = border
+        #border = cv2.resize(border,(512,512))
+        #borderNew = border
         
         #min_ = min(width,height)
         #dim = [min_, min_]
@@ -48,7 +48,7 @@ while True:
         bridge = CvBridge()
         # image_msg = bridge.cv2_to_imgmsg(image, "passthrough")
         cv2.imwrite("zzz4.jpeg",border)
-        image_msg = bridge.cv2_to_imgmsg(border, 'bgr8')
+        image_msg = bridge.cv2_to_imgmsg(borderNew, 'bgr8')
         image_msg.header.stamp = rospy.Time.now()
         pub.publish(image_msg)
         rospy.loginfo('Publishing images')
