@@ -56,6 +56,7 @@ Python code:
 ```
 python3 image_server.py
 python get_image.py
+python pub_images.py
 ```
 
 Segmentation code: This code is found in the simulation_model folder.
