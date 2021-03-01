@@ -29,21 +29,10 @@ while True:
         border = cv2.copyMakeBorder(image,0,0,int(cw2/2),int(cw2/2),borderType = cv2.BORDER_CONSTANT, value = [0,0,0])
         width, height = border.shape[1], border.shape[0]
         mid_y = int(height/2)
-        borderNew = border[mid_y-ch2:mid_y+ch2,0:width]
+        borderNew = border[mid_y-(ch2/2):mid_y+(ch2/2),0:width]
         
         #border = cv2.resize(border,(512,512))
         #borderNew = border
-        
-        #min_ = min(width,height)
-        #dim = [min_, min_]
-        #ht, wd, cc = image.shape
-        #ww = 640
-        #hh = 480
-        #result = np.full((hh,ww,cc),color,dtype = np.uint8)
-        #xx = (ww - wd) // 2
-        #yy = (hh - ht) // 2
-        #result[yy:yy+ht, xx:xx+wd] = image
-
 
         bridge = CvBridge()
         # image_msg = bridge.cv2_to_imgmsg(image, "passthrough")
