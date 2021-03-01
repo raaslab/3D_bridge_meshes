@@ -37,7 +37,7 @@ while True:
 
         bridge = CvBridge()
         # image_msg = bridge.cv2_to_imgmsg(image, "passthrough")
-        cv2.imwrite("zzz4.jpeg",border)
+        cv2.imwrite("zzz4.jpeg",borderNew)
         image_msg = bridge.cv2_to_imgmsg(borderNew, 'bgr8')
         image_msg.header.stamp = rospy.Time.now()
         pub.publish(image_msg)
