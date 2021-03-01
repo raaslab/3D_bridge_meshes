@@ -30,7 +30,7 @@ while True:
         width, height = border.shape[1], border.shape[0]
         mid_y = int(height/2)
         #borderNew = border[mid_y-(ch2/2):mid_y+(ch2/2),0:width]
-        borderNew = border[0,10,0:width]
+        borderNew = border[0,300,0:width]
         
         #border = cv2.resize(border,(512,512))
         #borderNew = border
