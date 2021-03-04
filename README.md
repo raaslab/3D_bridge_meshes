@@ -90,7 +90,10 @@ To run visited points publisher:
 
 To run baseline for GATSBI algorithm:
 
-`rosrun octomap_server baseline`
+```
+rosrun octomap_server baseline
+roslaunch hector_moveit_frontier_exploration frontier_explore.launch
+```
 
 To run GATSBI algorithm:
 
