@@ -51,17 +51,13 @@ To launch an environment launch the following line of code:
 
 `roslaunch hector_moveit_gazebo final_bridge.launch`
 
-Python code:
+Add this python code in if you want to use the neural net for segmentation.
+Python code. Segmentation code found in this folder and simulation_model folder:
 
 ```
 python3 image_server.py
 python get_image.py
 python pub_images.py
-```
-
-Segmentation code: This code is found in the simulation_model folder.
-
-```
 python3 run_show_results__.py
 ```
 
