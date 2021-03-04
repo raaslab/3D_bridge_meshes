@@ -32,7 +32,6 @@ ros::Publisher pub;
 static int counter = 0;
 
 void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::PointCloud2ConstPtr &input_cloud, const sensor_msgs::CameraInfoConstPtr &cam_info){
-	std::cout<<"Inside callback"<<std::endl;
         // Get the image in cv::Mat format
         cv_bridge::CvImagePtr cv_ptr;
         try {
@@ -43,7 +42,6 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
             return;
         }
         cv::Mat image_cv_mat = cv_ptr->image;
-	std::cout<<"3d_to_2d got image"<<std::endl;
         // Get the transformation between velodyne frame and image frame
         pcl::PCLPointCloud2 pcl_input;
         pcl_conversions::toPCL(*input_cloud, pcl_input);
@@ -87,7 +85,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
         // cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(24, 74, 169), b_thresh);
 
         // Only bridge
-        cv::inRange(frame_HSV, cv::Scalar(0, 0, 100), cv::Scalar( 10, 10, 150), g_thresh);
+        cv::inRange(frame_HSV, cv::Scalar(5,5,5), cv::Scalar(255,255,255), g_thresh);
         //Wall Only
         // cv::inRange(frame_HSV, cv::Scalar(0, 0, 118), cv::Scalar(176, 241, 242), g_thresh);
 
@@ -163,7 +161,6 @@ int main(int argc, char** argv){
     message_filters::Synchronizer<SyncPolicy> sync_params(SyncPolicy(5), image_acquire, pcl_acquire, cam_info_acquire);
     // Using these parameters of the sync policy, get the messages, which are synced
     sync_params.registerCallback(boost::bind(&sync_callback, _1, _2, _3));
-    std::cout<<"\nafter sync_callback"<<std::endl;
     pub = handler.advertise<sensor_msgs::PointCloud2>("transformed_cloud_image_frame", 1);
     ros::spin();
     return 0;
