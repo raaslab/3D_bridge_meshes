@@ -102,11 +102,3 @@ To run GATSBI algorithm:
 To plot path of UAV:
 
 `rosrun hector_trajectory_server hector_trajectory_server`
-
-### TODO:
-1. Theoretical guarantees
-  a. guaranteeing full inspection of the bridge
-  b. quality guarantees of inspection images
-2. Add frontier exploration if no bridge voxels are seen
-3. improve bridge segmentation
-4. improve UAV point to point flight
