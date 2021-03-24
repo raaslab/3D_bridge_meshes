@@ -52,14 +52,18 @@ To launch an environment launch the following line of code:
 `roslaunch hector_moveit_gazebo final_bridge.launch`
 
 Add this python code in if you want to use the neural net for segmentation.
-Python code. Segmentation code found in this folder and simulation_model folder:
+Location ~/catkin_ws/src/3D_bridge_meshes:
 
 ```
 python3 image_server.py
 python get_image.py
 python pub_images.py
-python3 run_show_results__.py
 ```
+
+Location ~/catkin_ws/src/simulation_model:
+
+`python3 run_show_results__.py`
+
 
 To launch filters for LiDAR and RGB camera:
 
