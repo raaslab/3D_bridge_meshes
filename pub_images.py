@@ -11,7 +11,7 @@ import numpy as np
 
 source_image_dir = '../deep_lab_v3_material_detection/predicted_masks/'
 pub = rospy.Publisher('image_mask', Image, queue_size = 10)
-rospy.init_node('image_mask_node', anonymous = True)
+rospy.init_node('image_mask_node')
 
 #for image_name in tqdm(os.listdir(source_image_dir)):
 #print(image_name)
