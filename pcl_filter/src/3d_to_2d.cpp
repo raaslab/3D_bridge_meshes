@@ -32,20 +32,27 @@ ros::Publisher pub;
 static int counter = 0;
 
 void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::PointCloud2ConstPtr &input_cloud, const sensor_msgs::CameraInfoConstPtr &cam_info){
+        ROS_INFO("Inside sync_callback\n");
+
         // Get the image in cv::Mat format
         cv_bridge::CvImagePtr cv_ptr;
         try {
+            ROS_INFO("Inside try block\n");
             cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGR8);
+            ROS_INFO("End of try block\n");
         }
         catch(cv_bridge::Exception& e){
+            ROS_INFO("Inside catch block\n");
             ROS_ERROR("cv_bridge exception: %s", e.what());
             return;
         }
+        ROS_INFO("After try block\n");
         cv::Mat image_cv_mat = cv_ptr->image;
         // Get the transformation between velodyne frame and image frame
+        ROS_INFO("Getting the transformation between velodyne frame and image frame\n");
         pcl::PCLPointCloud2 pcl_input;
         pcl_conversions::toPCL(*input_cloud, pcl_input);
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);      
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
         pcl::fromPCLPointCloud2(pcl_input, *temp_cloud);
 
         tf::TransformListener tf_listener;
@@ -61,7 +68,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
             ROS_ERROR("%s", exception.what());
             return;
         }
-     
+
 
         origin = transformer.getOrigin();
         rot = transformer.getRotation();
@@ -77,7 +84,8 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
         cam_model_.fromCameraInfo(cam_info);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
 
-        // Apply HSV filters 
+        // Apply HSV filters
+        ROS_INFO("Applying filters\n");
         cv::Mat g_thresh, b_thresh, frame_HSV;
         cv::cvtColor(image_cv_mat, frame_HSV, cv::COLOR_BGR2HSV);
         // Detect the object based on HSV Range Values
@@ -96,7 +104,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
 
         cv::bitwise_not(g_thresh, b_thresh);
         cv::morphologyEx(b_thresh, b_thresh, cv::MORPH_CLOSE, elem);
-        
+
         pcl::ExtractIndices<pcl::PointXYZRGB> extract;
         // pcl::ExtractIndices:: extract = new pcl::ExtractIndices<pcl::PointXYZI>();
         std::cout << (cam_info->K[0]) << " " << (cam_info->K[1]) << " " << (cam_info->K[2]) << "\n";
@@ -154,7 +162,7 @@ int main(int argc, char** argv){
     message_filters::Subscriber<sensor_msgs::CameraInfo> cam_info_acquire (handler, "/camera/rgb/camera_info", 1);
     // message_filters::Subscriber<sensor_msgs::CameraInfo> cam_info_acquire
                                 // (handler, "/front_cam/camera/camera_info", 1);
-    // Object call for devising a policy or parameters on how to 
+    // Object call for devising a policy or parameters on how to
     // synchronize the topics
     typedef message_filters::sync_policies::ApproximateTime <sensor_msgs::Image, sensor_msgs::PointCloud2, sensor_msgs::CameraInfo> SyncPolicy;
     typedef message_filters::sync_policies::ApproximateTime <sensor_msgs::Image, sensor_msgs::PointCloud2, sensor_msgs::CameraInfo> SyncPolicy;
@@ -163,6 +171,7 @@ int main(int argc, char** argv){
     // Using these parameters of the sync policy, get the messages, which are synced
     sync_params.registerCallback(boost::bind(&sync_callback, _1, _2, _3));
     pub = handler.advertise<sensor_msgs::PointCloud2>("transformed_cloud_image_frame", 1);
+    ROS_INFO("Before ros::spin\n");
     ros::spin();
     return 0;
 }
