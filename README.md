@@ -65,10 +65,11 @@ Location ~/catkin_ws/src/simulation_model:
 `python3 run_show_results__.py`
 
 
-To launch filters for LiDAR and RGB camera:
+To launch filters for LiDAR and RGB camera: (Note: had to split octomap_server_velo and octomap_server_trimmed)
 
 ```
 roslaunch pcl_filter cloud_pub.launch
+rosrun octomap_server octomap_server_node _resolution:=1 _frame_id:="world" _sensor_model/max_range:=40 cloud_in:=transformed_cloud_image_frame
 rosrun octomap_server zFilter
 ```
 

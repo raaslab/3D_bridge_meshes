@@ -32,28 +32,24 @@ ros::Publisher pub;
 static int counter = 0;
 
 void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::PointCloud2ConstPtr &input_cloud, const sensor_msgs::CameraInfoConstPtr &cam_info){
-        ROS_INFO("Inside sync_callback\n");
 
         // Get the image in cv::Mat format
         cv_bridge::CvImagePtr cv_ptr;
         try {
-            ROS_INFO("Inside try block\n");
-            cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGR8);
-            ROS_INFO("End of try block\n");
+            // cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGR8); // CHANGED HERE
+            cv_ptr = cv_bridge::toCvCopy(image);
+            // cv_ptr->image.convertTo(cv_ptr->image, sensor_msgs::image_encodings::BGR8);
         }
         catch(cv_bridge::Exception& e){
-            ROS_INFO("Inside catch block\n");
             ROS_ERROR("cv_bridge exception: %s", e.what());
             return;
         }
-        ROS_INFO("After try block\n");
         cv::Mat image_cv_mat = cv_ptr->image;
         // Get the transformation between velodyne frame and image frame
-        ROS_INFO("Getting the transformation between velodyne frame and image frame\n");
         pcl::PCLPointCloud2 pcl_input;
         pcl_conversions::toPCL(*input_cloud, pcl_input);
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-        pcl::fromPCLPointCloud2(pcl_input, *temp_cloud);
+        // pcl::fromPCLPointCloud2(pcl_input, *temp_cloud);
 
         tf::TransformListener tf_listener;
         tf::StampedTransform transformer;
@@ -74,7 +70,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
         rot = transformer.getRotation();
         rot.normalize();
         Eigen::Affine3d transf_mat;
-        //pcl_ros::transformAsMatrix(transformer, transf_mat);
+        //pcl_ros::transformAsMatrix(transformer, transf_mat); // CHANGED HERE
         tf::transformTFToEigen(transformer, transf_mat);
 
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr transform_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -85,7 +81,6 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
 
         // Apply HSV filters
-        ROS_INFO("Applying filters\n");
         cv::Mat g_thresh, b_thresh, frame_HSV;
         cv::cvtColor(image_cv_mat, frame_HSV, cv::COLOR_BGR2HSV);
         // Detect the object based on HSV Range Values
