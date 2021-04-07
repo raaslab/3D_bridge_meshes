@@ -148,7 +148,8 @@ int main(int argc, char** argv){
 
     // Pass the position and attitude topics through a filter,
     // so that they can by synced together.
-    message_filters::Subscriber<sensor_msgs::Image> image_acquire (handler, "/camera/rgb/image_raw", 1);
+    //message_filters::Subscriber<sensor_msgs::Image> image_acquire (handler, "/camera/rgb/image_raw", 1); // original
+    message_filters::Subscriber<sensor_msgs::Image> image_acquire (handler, "/image_mask", 1); // new
     // message_filters::Subscriber<sensor_msgs::Image> image_acquire
                                     // (handler, "/front_cam/camera/image", 1);
     message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_acquire (handler, "velodyne_points", 1);
