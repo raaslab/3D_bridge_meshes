@@ -78,14 +78,17 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
 
         // Apply HSV filters 
-        cv::Mat g_thresh, b_thresh, frame_HSV;
+        cv::Mat lower, b_thresh, frame_HSV, upper, g_thresh; // changed g_thresh to lower
         cv::cvtColor(image_cv_mat, frame_HSV, cv::COLOR_BGR2HSV);
         // Detect the object based on HSV Range Values
         // cv::inRange(frame_HSV, cv::Scalar(24, 39, 0), cv::Scalar(123, 255, 239), g_thresh);
         // cv::inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(24, 74, 169), b_thresh);
 
         // Only bridge
-	cv::inRange(frame_HSV, cv::Scalar(0,0,0), cv::Scalar(180,30,156), g_thresh);
+	//cv::inRange(frame_HSV, cv::Scalar(0,0,0), cv::Scalar(180,30,156), g_thresh); // this is the original filter
+	cv::inRange(frame_HSV,cv::Scalar(230,230,40), cv::Scalar(250,255,60),g_thresh);	// this is the new filter
+
+
         //cv::inRange(frame_HSV, cv::Scalar(5,5,5), cv::Scalar(255,255,255), g_thresh);
         //Wall Only
         // cv::inRange(frame_HSV, cv::Scalar(0, 0, 118), cv::Scalar(176, 241, 242), g_thresh);
