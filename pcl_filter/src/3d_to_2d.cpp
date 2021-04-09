@@ -86,7 +86,7 @@ void sync_callback(const sensor_msgs::ImageConstPtr &image, const sensor_msgs::P
 
         // Only bridge
 	//cv::inRange(frame_HSV, cv::Scalar(0,0,0), cv::Scalar(180,30,156), g_thresh); // this is the original filter
-	cv::inRange(frame_HSV,cv::Scalar(98,81,0), cv::Scalar(114,255,255),g_thresh);	// this is the new filter
+	cv::inRange(frame_HSV,cv::Scalar(100,230,230), cv::Scalar(179,255,255),g_thresh);	// this is the new filter
 
 
         //cv::inRange(frame_HSV, cv::Scalar(5,5,5), cv::Scalar(255,255,255), g_thresh);
